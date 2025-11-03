@@ -1,63 +1,167 @@
-import Image from "next/image";
+import { Upload, FileText, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
-export default function Home() {
+export default function DashboardPage() {
+  // Mock data for parsed experiences
+  const experiences = [
+    {
+      id: 1,
+      title: "Led cross-functional team to deliver product ahead of schedule",
+      status: "STAR Ready",
+    },
+    {
+      id: 2,
+      title: "Resolved critical production bug affecting 10K+ users",
+      status: "STAR Ready",
+    },
+    {
+      id: 3,
+      title: "Mentored junior developer to improve code quality by 40%",
+      status: "STAR Ready",
+    },
+    {
+      id: 4,
+      title: "Implemented new testing framework reducing bugs by 60%",
+      status: "STAR Ready",
+    },
+    {
+      id: 5,
+      title: "Negotiated with stakeholders to align on project priorities",
+      status: "STAR Ready",
+    },
+  ];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b border-border bg-card">
+        <div className="container mx-auto px-6 py-4">
+          <h1 className="text-2xl font-semibold text-foreground">
+            Interview Coach AI
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-sm text-muted-foreground mt-1">
+            Practice behavioral interviews with AI-powered feedback
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-6 py-8">
+        <div className="grid lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+          {/* Left Panel - Document Upload */}
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl">Document Upload</CardTitle>
+              <CardDescription>
+                Upload your career document to generate STAR stories
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-teal-500/50 transition-colors cursor-pointer bg-muted/20">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-teal-500/10 flex items-center justify-center">
+                    <Upload className="w-8 h-8 text-teal-500" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-medium text-foreground mb-1">
+                      Upload Career Document
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      PDF, DOCX, TXT
+                    </p>
+                  </div>
+                  <Button variant="outline" className="mt-2 bg-transparent">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Choose File
+                  </Button>
+                </div>
+              </div>
+
+              {/* Status Indicator */}
+              <div className="mt-6 flex items-center gap-2 p-4 bg-teal-500/10 border border-teal-500/20 rounded-lg">
+                <CheckCircle2 className="w-5 h-5 text-teal-500" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">
+                    Parsing Complete
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    5 STAR experiences extracted
+                  </p>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className="bg-teal-500/20 text-teal-400 border-teal-500/30"
+                >
+                  Ready for Analysis
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Right Panel - Experiences List */}
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl">
+                Parsed STAR Experiences (5/5)
+              </CardTitle>
+              <CardDescription>
+                AI-generated stories from your career document
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {experiences.map((exp) => (
+                  <div
+                    key={exp.id}
+                    className="p-4 bg-card border border-border rounded-lg hover:border-teal-500/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-sm text-foreground leading-relaxed flex-1">
+                        {exp.title}
+                      </p>
+                      <Badge
+                        variant="outline"
+                        className="bg-teal-500/10 text-teal-400 border-teal-500/30 shrink-0"
+                      >
+                        {exp.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Call to Action */}
+        <div className="max-w-7xl mx-auto mt-8">
+          <Card className="shadow-xl bg-linear-to-br from-teal-500/10 to-blue-500/10 border-teal-500/20">
+            <CardContent className="p-8 text-center">
+              <h2 className="text-2xl font-semibold text-foreground mb-2">
+                Ready to Practice?
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Start your first practice session with AI-guided coaching
+              </p>
+              <Link href="/practice">
+                <Button
+                  size="lg"
+                  className="bg-teal-600 hover:bg-teal-700 text-white px-8"
+                >
+                  Start Practice Session
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
