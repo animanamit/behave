@@ -12,9 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
 import { authClient } from "@/lib/auth-client";
-import SignUp from "@/components/auth/sign-up";
 import SignOutButton from "@/components/auth/sign-out-button";
-import { toast } from "sonner";
 
 const experiences = [
   {
@@ -70,10 +68,6 @@ export default function DashboardPage() {
     return <div>Error!</div>;
   }
 
-  const fireToast = () => {
-    toast("test");
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -88,7 +82,6 @@ export default function DashboardPage() {
         </div>
         <div>
           <SignOutButton />
-          <button onClick={fireToast}>fire</button>
         </div>
       </header>
 
