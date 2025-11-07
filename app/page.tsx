@@ -1,3 +1,4 @@
+"use client";
 import { Upload, FileText, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,35 +11,68 @@ import {
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
+import { authClient } from "@/lib/auth-client";
+import SignUp from "@/components/auth/sign-up";
+import SignOutButton from "@/components/auth/sign-out-button";
+import { toast } from "sonner";
+
+const experiences = [
+  {
+    id: 1,
+    title: "Led cross-functional team to deliver product ahead of schedule",
+    status: "STAR Ready",
+  },
+  {
+    id: 2,
+    title: "Resolved critical production bug affecting 10K+ users",
+    status: "STAR Ready",
+  },
+  {
+    id: 3,
+    title: "Mentored junior developer to improve code quality by 40%",
+    status: "STAR Ready",
+  },
+  {
+    id: 4,
+    title: "Implemented new testing framework reducing bugs by 60%",
+    status: "STAR Ready",
+  },
+  {
+    id: 5,
+    title: "Negotiated with stakeholders to align on project priorities",
+    status: "STAR Ready",
+  },
+];
+
 export default function DashboardPage() {
   // Mock data for parsed experiences
-  const experiences = [
-    {
-      id: 1,
-      title: "Led cross-functional team to deliver product ahead of schedule",
-      status: "STAR Ready",
-    },
-    {
-      id: 2,
-      title: "Resolved critical production bug affecting 10K+ users",
-      status: "STAR Ready",
-    },
-    {
-      id: 3,
-      title: "Mentored junior developer to improve code quality by 40%",
-      status: "STAR Ready",
-    },
-    {
-      id: 4,
-      title: "Implemented new testing framework reducing bugs by 60%",
-      status: "STAR Ready",
-    },
-    {
-      id: 5,
-      title: "Negotiated with stakeholders to align on project priorities",
-      status: "STAR Ready",
-    },
-  ];
+  const { data, isPending, error } = authClient.useSession();
+
+  console.log("lets go");
+
+  if (isPending) {
+    return <div>Loading...</div>;
+  }
+
+  if (!data?.session) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        Not authenticated
+        <Button>
+          <Link href="/sign-in">Sign In</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.log(error);
+    return <div>Error!</div>;
+  }
+
+  const fireToast = () => {
+    toast("test");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,11 +80,15 @@ export default function DashboardPage() {
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-6 py-4">
           <h1 className="text-2xl font-semibold text-foreground">
-            Interview Coach AI
+            Welcome {data?.user.name}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Practice behavioral interviews with AI-powered feedback
           </p>
+        </div>
+        <div>
+          <SignOutButton />
+          <button onClick={fireToast}>fire</button>
         </div>
       </header>
 
