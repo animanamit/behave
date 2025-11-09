@@ -1,9 +1,11 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
+import { PresignedURLRequestSchema } from "@/lib/zod-schemas";
 import { useState } from "react";
 
 import { toast } from "sonner";
+import z from "zod";
 
 const UploadCareerDoc = () => {
   const [document, setDocument] = useState<File | null>(null);
@@ -13,44 +15,61 @@ const UploadCareerDoc = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     console.log(document);
-    if (document) {
-      try {
-        const fileName = user
-          ? user + "-" + document.name.replaceAll(" ", "-")
-          : document.name;
-        const contentType = document.type;
 
-        const body = {
-          fileName: fileName,
-          contentType: contentType,
-        };
-
-        const response = await fetch("/api/get-s3-presigned-url", {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
-        const { uploadURL } = await response.json();
-
-        const uploadResponse = await fetch(uploadURL, {
-          method: "PUT",
-          body: document,
-          headers: {
-            "Content-Type": document.type,
-          },
-        });
-
-        if (uploadResponse.ok) {
-          toast("Successfully uploaded file!");
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          toast(error.message);
-        } else toast("Unknown Error Encountered");
-      }
-    } else {
-      toast("You haven't selected a file!");
+    if (!document) {
+      toast("Please select a file");
       return;
+    }
+
+    try {
+      const fileName = user
+        ? user + "-" + document.name.replaceAll(" ", "-")
+        : document.name;
+      const contentType = document.type || "application/octet-stream";
+
+      const payload = {
+        fileName: fileName,
+        contentType: contentType,
+      };
+
+      const validatedPayload = PresignedURLRequestSchema.parse(payload);
+      const response = await fetch("/api/get-s3-presigned-url", {
+        method: "POST",
+        body: JSON.stringify(validatedPayload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        toast(error.error);
+        return;
+      }
+
+      const { uploadURL } = await response.json();
+
+      const uploadResponse = await fetch(uploadURL, {
+        method: "PUT",
+        body: document,
+        headers: { "Content-Type": contentType },
+      });
+
+      if (!uploadResponse.ok) {
+        const error = await uploadResponse.json();
+        toast(error.error);
+        return;
+      }
+
+      toast("Successfully uploaded file!");
+      setDocument(null);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast(error.errors[0].message);
+      } else if (error instanceof Error) {
+        toast(error.message);
+      } else {
+        toast("Unknown error");
+      }
     }
   };
 
