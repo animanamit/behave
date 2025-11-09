@@ -47,6 +47,8 @@ export default function DashboardPage() {
   // Mock data for parsed experiences
   const { data, isPending, error } = authClient.useSession();
 
+  console.log(data);
+
   console.log("lets go");
 
   if (isPending) {

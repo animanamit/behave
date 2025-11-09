@@ -17,3 +17,14 @@ export const PresignedURLResponseSchema = z.object({
 });
 
 export type PresignedUrlResponse = z.infer<typeof PresignedURLResponseSchema>;
+
+// For saving file metadata to database
+export const SaveFileSchema = z.object({
+  s3Key: z.string().min(1),
+  fileName: z.string().min(1),
+  fileSize: z.number().int().positive(),
+  contentType: z.string().min(1),
+  userId: z.string().min(1),
+});
+
+export type SaveFileRequest = z.infer<typeof SaveFileSchema>;

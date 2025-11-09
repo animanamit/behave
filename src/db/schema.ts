@@ -128,3 +128,25 @@ export const sessionFeedback = pgTable("session_feedback", {
   keyPointsMissed: text("key_points_missed"), // JSON
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const files = pgTable("files", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+
+  userId: text("user_id")
+    .references(() => user.id)
+    .notNull(),
+
+  s3Key: text("s3_key").notNull(),
+
+  fileName: text("file_name").notNull(),
+
+  fileSize: integer("file_size").notNull(),
+
+  contentType: text("content_type").notNull(),
+
+  uploadedAt: timestamp("uploaded_at", { withTimezone: true })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});

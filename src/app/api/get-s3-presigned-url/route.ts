@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const uploadURL = await getSignedUrl(s3Client, command, {
       expiresIn: 3600,
     });
-    return NextResponse.json({ uploadURL: uploadURL });
+    return NextResponse.json({ uploadURL: uploadURL, s3Key: key });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

@@ -6,12 +6,46 @@ import { useState } from "react";
 
 import { toast } from "sonner";
 import z from "zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
+import { SaveFileRequest } from "@/lib/zod-schemas";
 
 const UploadCareerDoc = () => {
+  const queryClient = useQueryClient();
   const [document, setDocument] = useState<File | null>(null);
-
   const { data: session } = authClient.useSession();
   const user = session?.user.name?.replaceAll(" ", "-");
+  const userId = session?.user.id;
+
+  const mutation = useMutation<{ success: boolean }, Error, SaveFileRequest>({
+    mutationFn: async (data: SaveFileRequest) => {
+      const response = await fetch("/api/add-file-to-db", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Failed to save file" }));
+        throw new Error(
+          errorData.error || `Failed to save file: ${response.statusText}`
+        );
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast("Successfully added file metadata to database!");
+      if (userId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.files.byUser(userId),
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to save file metadata");
+    },
+  });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -46,7 +80,7 @@ const UploadCareerDoc = () => {
         return;
       }
 
-      const { uploadURL } = await response.json();
+      const { uploadURL, s3Key } = await response.json();
 
       const uploadResponse = await fetch(uploadURL, {
         method: "PUT",
@@ -61,6 +95,16 @@ const UploadCareerDoc = () => {
       }
 
       toast("Successfully uploaded file!");
+
+      // Add this:
+      const mutationResult = await mutation.mutateAsync({
+        s3Key,
+        fileName,
+        fileSize: document.size,
+        contentType,
+        userId: userId!,
+      });
+
       setDocument(null);
     } catch (error) {
       if (error instanceof z.ZodError) {

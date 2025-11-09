@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 import { Inter, Geist_Mono as V0_Font_Geist_Mono } from "next/font/google";
+import Providers from "@/providers";
 
 // Initialize fonts
 const _geistMono = V0_Font_Geist_Mono({
@@ -29,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} font-sans antialiased`}>
-        {children}
+        <Providers>{children}</Providers>
         <Toaster />
       </body>
     </html>
