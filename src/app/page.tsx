@@ -14,6 +14,7 @@ import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import SignOutButton from "@/components/auth/sign-out-button";
 import UploadCareerDoc from "@/components/upload-career-doc";
+import UserFilesTable from "@/components/user-files/user-files-table";
 
 const experiences = [
   {
@@ -86,6 +87,7 @@ export default function DashboardPage() {
         <div>
           <SignOutButton />
           <UploadCareerDoc />
+          <UserFilesTable />
         </div>
       </header>
 
