@@ -28,3 +28,17 @@ export const SaveFileSchema = z.object({
 });
 
 export type SaveFileRequest = z.infer<typeof SaveFileSchema>;
+
+const UserFileSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  s3Key: z.string(),
+  fileName: z.string(),
+  fileSize: z.number(),
+  contentType: z.string(),
+  uploadedAt: z.coerce.date(),
+});
+
+export const UserFilesSchema = z.array(UserFileSchema);
+
+export type UserFilesRequestData = z.infer<typeof UserFilesSchema>;
