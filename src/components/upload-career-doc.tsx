@@ -13,6 +13,7 @@ import { SaveFileRequest } from "@/lib/zod-schemas";
 const UploadCareerDoc = () => {
   const queryClient = useQueryClient();
   const [document, setDocument] = useState<File | null>(null);
+  const [customName, setCustomName] = useState<string>("");
   const { data: session } = authClient.useSession();
   const user = session?.user.name?.replaceAll(" ", "-");
   const userId = session?.user.id;
@@ -58,9 +59,10 @@ const UploadCareerDoc = () => {
     }
 
     try {
-      const fileName = user
-        ? user + "-" + document.name.replaceAll(" ", "-")
-        : document.name;
+      const baseFileName = customName.trim()
+        ? customName.replaceAll(" ", "-")
+        : document.name.replaceAll(" ", "-");
+      const fileName = user ? `${user}-${baseFileName}` : baseFileName;
       const contentType = document.type || "application/octet-stream";
 
       const payload = {
@@ -106,6 +108,7 @@ const UploadCareerDoc = () => {
       });
 
       setDocument(null);
+      setCustomName("");
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast(error.errors[0].message);
@@ -129,6 +132,14 @@ const UploadCareerDoc = () => {
             setDocument(event.target.files[0]);
           }
         }}
+      />
+      <label htmlFor="custom-name">File Name (optional)</label>
+      <input
+        type="text"
+        id="custom-name"
+        placeholder="e.g., Resume 2024"
+        value={customName}
+        onChange={(event) => setCustomName(event.target.value)}
       />
       <button type="submit">Submit</button>
     </form>
