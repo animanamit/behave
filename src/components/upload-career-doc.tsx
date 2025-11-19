@@ -1,16 +1,12 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import {
-  PresignedURLRequestSchema,
-  UploadCareerDocSchema,
-} from "@/lib/zod-schemas";
+import { UploadCareerDocSchema } from "@/lib/zod-schemas";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/query-keys";
-import { SaveFileRequest } from "@/lib/zod-schemas";
+import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { trpc } from "@/lib/trpc-client";
 
 import { z } from "zod";
 
@@ -52,33 +48,23 @@ const UploadCareerDoc = () => {
     },
   });
 
-  // Mutation for saving file metadata to database
-  const mutation = useMutation<{ success: boolean }, Error, SaveFileRequest>({
-    mutationFn: async (data: SaveFileRequest) => {
-      const response = await fetch("/api/add-file-to-db", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ error: "Failed to save file" }));
-        throw new Error(
-          errorData.error || `Failed to save file: ${response.statusText}`
-        );
-      }
-      return response.json();
+  // tRPC mutations for file operations
+  const presignedUrlMutation = trpc.files.getPresignedUrl.useMutation({
+    onError: (error) => {
+      toast.error(error.message || "Failed to generate upload URL");
     },
+  });
+
+  const saveFileMutation = trpc.files.saveFile.useMutation({
     onSuccess: () => {
       toast.success("Successfully added file metadata to database!");
       if (userId) {
-        // Invalidate the query so the file list refetches
         queryClient.invalidateQueries({
-          queryKey: queryKeys.files.byUser(userId),
+          queryKey: ["trpc", "files", "getUserFiles"],
         });
       }
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast.error(error.message || "Failed to save file metadata");
     },
   });
@@ -99,27 +85,15 @@ const UploadCareerDoc = () => {
         : document.name.replaceAll(" ", "-");
 
       const fileName = user ? `${user}-${baseFileName}` : baseFileName;
-      const contentType = document.type || "application/octet-stream";
+      const contentType: "application/pdf" | "text/plain" | "application/msword" | "application/vnd.openxmlformats-officedocument.wordprocessingml.document" = (document.type as any) || "application/pdf";
 
-      const payload = {
-        fileName: fileName,
-        contentType: contentType,
-      };
-
-      const validatedPayload = PresignedURLRequestSchema.parse(payload);
-      const response = await fetch("/api/get-s3-presigned-url", {
-        method: "POST",
-        body: JSON.stringify(validatedPayload),
+      // Use tRPC mutation to get presigned URL
+      const { uploadURL, s3Key } = await presignedUrlMutation.mutateAsync({
+        fileName,
+        contentType,
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        toast.error(error.error);
-        return;
-      }
-
-      const { uploadURL, s3Key } = await response.json();
-
+      // Upload file directly to S3 using the presigned URL
       const uploadResponse = await fetch(uploadURL, {
         method: "PUT",
         body: document,
@@ -134,7 +108,8 @@ const UploadCareerDoc = () => {
 
       toast.success("Successfully uploaded file to S3!");
 
-      await mutation.mutateAsync({
+      // Use tRPC mutation to save file metadata to database
+      await saveFileMutation.mutateAsync({
         s3Key,
         fileName,
         fileSize: document.size,
@@ -224,8 +199,8 @@ const UploadCareerDoc = () => {
       />
 
       {/* Submit Button */}
-      <Button type="submit" disabled={mutation.isPending}>
-        {mutation.isPending ? "Uploading..." : "Upload"}
+      <Button type="submit" disabled={saveFileMutation.isPending || presignedUrlMutation.isPending}>
+        {saveFileMutation.isPending || presignedUrlMutation.isPending ? "Uploading..." : "Upload"}
       </Button>
     </form>
   );
