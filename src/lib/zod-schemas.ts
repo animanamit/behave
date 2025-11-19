@@ -42,3 +42,18 @@ const UserFileSchema = z.object({
 export const UserFilesSchema = z.array(UserFileSchema);
 
 export type UserFilesRequestData = z.infer<typeof UserFilesSchema>;
+
+export const UploadCareerDocSchema = z.object({
+  customName: z
+    .string()
+    .max(50, "File name must be less than 50 characters")
+    .optional()
+    .or(z.literal("")),
+  document: z
+    .instanceof(File, { message: "Please select a file" })
+    .refine((file) => file.size > 0, "File is empty")
+    .refine(
+      (file) => file.size <= 10 * 1024 * 1024,
+      "File must be less than 10MB"
+    ),
+});

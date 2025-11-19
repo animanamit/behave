@@ -86,15 +86,11 @@ export default function DashboardPage() {
         </div>
         <div>
           <SignOutButton />
-          <UploadCareerDoc />
-          <UserFilesTable />
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-6 py-8">
         <div className="grid lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
-          {/* Left Panel - Document Upload */}
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-xl">Document Upload</CardTitle>
@@ -143,63 +139,19 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Right Panel - Experiences List */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-xl">
-                Parsed STAR Experiences (5/5)
-              </CardTitle>
-              <CardDescription>
-                AI-generated stories from your career document
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {experiences.map((exp) => (
-                  <div
-                    key={exp.id}
-                    className="p-4 bg-card border border-border rounded-lg hover:border-teal-500/50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-sm text-foreground leading-relaxed flex-1">
-                        {exp.title}
-                      </p>
-                      <Badge
-                        variant="outline"
-                        className="bg-teal-500/10 text-teal-400 border-teal-500/30 shrink-0"
-                      >
-                        {exp.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div>
+            <UploadCareerDoc />
+            <UserFilesTable />
+          </div>
         </div>
-
-        {/* Call to Action */}
-        <div className="max-w-7xl mx-auto mt-8">
-          <Card className="shadow-xl bg-linear-to-br from-teal-500/10 to-blue-500/10 border-teal-500/20">
-            <CardContent className="p-8 text-center">
-              <h2 className="text-2xl font-semibold text-foreground mb-2">
-                Ready to Practice?
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                Start your first practice session with AI-guided coaching
-              </p>
-              <Link href="/practice">
-                <Button
-                  size="lg"
-                  className="bg-teal-600 hover:bg-teal-700 text-white px-8"
-                >
-                  Start Practice Session
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
+        <Link href="/practice">
+          <Button
+            size="lg"
+            className="bg-teal-600 hover:bg-teal-700 text-white px-8"
+          >
+            Start Practice Session
+          </Button>
+        </Link>
       </main>
     </div>
   );
