@@ -3,32 +3,63 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* 
+  DESIGN SYSTEM NOTES:
+  This file defines the core visual variables for the application.
+  To modify the design system, adjust the variables in :root and .dark.
+*/
+
 :root {
+  /* Background & Foreground: High contrast black on white */
   --background: #ffffff;
   --foreground: #0a0a0a;
+
+  /* Card: Minimal, usually same as bg or very subtle off-white */
   --card: #ffffff;
   --card-foreground: #0a0a0a;
+
+  /* Popover: Used for dropdowns, dialogs */
   --popover: #ffffff;
   --popover-foreground: #0a0a0a;
-  --primary: #737373;
+
+  /* Primary: The main action color. 
+     For Lexiconic style: Solid Black (#171717) or very dark grey */
+  --primary: #171717;
   --primary-foreground: #fafafa;
+
+  /* Secondary: Used for secondary actions, backgrounds of muted items */
   --secondary: #f5f5f5;
   --secondary-foreground: #171717;
+
+  /* Muted: For disabled text, placeholders, less important info */
   --muted: #f5f5f5;
-  --muted-foreground: #717171;
+  --muted-foreground: #737373;
+
+  /* Accent: For hover states, highlighted items */
   --accent: #f5f5f5;
   --accent-foreground: #171717;
+
+  /* Destructive: Errors and dangerous actions */
   --destructive: #e7000b;
-  --destructive-foreground: #f5f5f5;
+  --destructive-foreground: #fafafa;
+
+  /* Border: Very light, crisp borders */
   --border: #e5e5e5;
   --input: #e5e5e5;
-  --ring: #a1a1a1;
-  --chart-1: #737373;
-  --chart-2: #737373;
+  --ring: #0a0a0a; /* Rings should be high contrast when focused */
+
+  /* Charts: Monochromatic scaling or specific data colors */
+  --chart-1: #171717;
+  --chart-2: #404040;
   --chart-3: #737373;
-  --chart-4: #737373;
-  --chart-5: #737373;
+  --chart-4: #a3a3a3;
+  --chart-5: #d4d4d4;
+
+  /* Radius: 0rem for brutalist, 0.25rem for "sharp but friendly"
+     Lexiconic uses very sharp edges. */
   --radius: 0rem;
+
+  /* Sidebar variables (if used) */
   --sidebar: #fafafa;
   --sidebar-foreground: #0a0a0a;
   --sidebar-primary: #171717;
@@ -37,6 +68,8 @@
   --sidebar-accent-foreground: #171717;
   --sidebar-border: #e5e5e5;
   --sidebar-ring: #a1a1a1;
+
+  /* Shadows: Kept minimal or removed entirely in the component overrides */
   --shadow-x: 0px;
   --shadow-y: 1px;
   --shadow-blur: 2px;
@@ -46,49 +79,63 @@
 }
 
 .dark {
+  /* Dark Mode: Deep black/gray scale */
   --background: #0a0a0a;
   --foreground: #fafafa;
-  --card: #191919;
+  
+  --card: #171717;
   --card-foreground: #fafafa;
-  --popover: #262626;
+  
+  --popover: #171717;
   --popover-foreground: #fafafa;
-  --primary: #737373;
-  --primary-foreground: #fafafa;
+  
+  --primary: #fafafa;
+  --primary-foreground: #171717;
+  
   --secondary: #262626;
   --secondary-foreground: #fafafa;
+  
   --muted: #262626;
-  --muted-foreground: #a1a1a1;
-  --accent: #404040;
+  --muted-foreground: #a3a3a3;
+  
+  --accent: #262626;
   --accent-foreground: #fafafa;
+  
   --destructive: #ff6467;
   --destructive-foreground: #262626;
-  --border: #383838;
-  --input: #525252;
-  --ring: #737373;
-  --chart-1: #737373;
-  --chart-2: #737373;
-  --chart-3: #737373;
+  
+  --border: #262626;
+  --input: #262626;
+  --ring: #d4d4d4;
+  
+  --chart-1: #fafafa;
+  --chart-2: #d4d4d4;
+  --chart-3: #a3a3a3;
   --chart-4: #737373;
-  --chart-5: #737373;
+  --chart-5: #525252;
+  
   --sidebar: #171717;
   --sidebar-foreground: #fafafa;
   --sidebar-primary: #fafafa;
   --sidebar-primary-foreground: #171717;
   --sidebar-accent: #262626;
   --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #ffffff;
+  --sidebar-border: #262626;
   --sidebar-ring: #525252;
-  --shadow-x: 0px;
-  --shadow-y: 1px;
-  --shadow-blur: 2px;
-  --shadow-spread: 0px;
-  --shadow-opacity: 0.05;
+  
   --shadow-color: #000000;
 }
 
 @theme inline {
-  --font-sans: 'Geist Mono', 'Geist Mono Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  /* 
+    TYPOGRAPHY SYSTEM:
+    - font-sans: Geist Sans (Headings & Body)
+    - font-mono: Geist Mono (Data & Code)
+  */
+  --font-serif: var(--font-sans), sans-serif; /* Remap serif to sans */
+  --font-mono: var(--font-mono), monospace;
+  --font-sans: var(--font-sans), sans-serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -125,8 +172,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-serif: 'Geist Mono', 'Geist Mono Fallback';
-  /* computed shadow variables below - do not modify */
+  
+  /* Shadow definitions */
   --shadow-2xs: var(--shadow-x) var(--shadow-y) color-mix(in srgb, var(--shadow-color) calc(var(--shadow-opacity) * 100%), transparent);
   --shadow-xs: var(--shadow-x) var(--shadow-y) var(--shadow-blur) var(--shadow-spread) color-mix(in srgb, var(--shadow-color) calc(var(--shadow-opacity) * 100%), transparent);
   --shadow-sm: var(--shadow-x) var(--shadow-y) calc(var(--shadow-blur) * 1.5) var(--shadow-spread) color-mix(in srgb, var(--shadow-color) calc(var(--shadow-opacity) * 100%), transparent);

@@ -1,8 +1,10 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-
 import { format } from "date-fns";
+import { FileIcon, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Text, Caption } from "@/components/ui/typography";
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -28,17 +30,36 @@ const formatFileSize = (bytes: number) => {
 export const columns: ColumnDef<userFile>[] = [
   {
     accessorKey: "fileName",
-    header: "File",
+    header: "File Name",
+    cell: ({ row }) => (
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-muted/30 rounded-sm border border-border">
+          <FileIcon className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="flex flex-col">
+          <Text variant="small" className="font-normal">{row.getValue("fileName")}</Text>
+          <Caption className="hidden md:block">{row.original.contentType}</Caption>
+        </div>
+      </div>
+    ),
   },
   {
     accessorKey: "fileSize",
     header: "Size",
-    cell: ({ row }) => formatFileSize(row.getValue("fileSize")),
+    cell: ({ row }) => (
+      <span className="font-mono text-xs text-muted-foreground">
+        {formatFileSize(row.getValue("fileSize"))}
+      </span>
+    ),
   },
   {
     accessorKey: "uploadedAt",
-    header: "Uploaded At",
-    cell: ({ row }) =>
-      format(new Date(row.getValue("uploadedAt")), "MMM d, yyyy"),
+    header: "Uploaded",
+    cell: ({ row }) => (
+      <span className="font-mono text-xs text-muted-foreground">
+        {format(new Date(row.getValue("uploadedAt")), "MMM d, yyyy")}
+      </span>
+    ),
   },
+  // Add actions column for delete if needed
 ];

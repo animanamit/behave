@@ -1,16 +1,31 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-
-const handleSignOut = async () => {
-  try {
-    await authClient.signOut();
-  } catch (error) {
-    console.log(error);
-  }
-};
+import { useRouter } from "next/navigation";
 
 const SignOutButton = () => {
-  return <Button onClick={handleSignOut}>Sign Out</Button>;
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    try {
+      await authClient.signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            router.push("/");
+          },
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  return (
+    <Button variant="default" size="sm" onClick={handleSignOut} className="w-full justify-start">
+      Sign Out
+    </Button>
+  );
 };
 
 export default SignOutButton;

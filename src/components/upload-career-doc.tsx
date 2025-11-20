@@ -7,19 +7,13 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { trpc } from "@/lib/trpc-client";
-
 import { z } from "zod";
+import { Upload, FileText, X } from "lucide-react";
 
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
-// Schema for just the customName field
+import { Card, CardContent } from "@/components/ui/card";
+import { Text } from "@/components/ui/typography";
 
 const UploadFormSchema = z.object({
   customName: z.string().max(50, "File name must be less than 50 characters"),
@@ -32,10 +26,6 @@ const UploadCareerDoc = () => {
   const user = session?.user.name?.replaceAll(" ", "-");
   const userId = session?.user.id;
 
-  // Initialize the form with useForm hook
-  // defaultValues: sets initial form state
-  // validators: runs validation with Zod schema on form submit
-  // onSubmit: called only if validation passes
   const form = useForm({
     defaultValues: {
       customName: "",
@@ -48,7 +38,6 @@ const UploadCareerDoc = () => {
     },
   });
 
-  // tRPC mutations for file operations
   const presignedUrlMutation = trpc.files.getPresignedUrl.useMutation({
     onError: (error) => {
       toast.error(error.message || "Failed to generate upload URL");
@@ -57,7 +46,7 @@ const UploadCareerDoc = () => {
 
   const saveFileMutation = trpc.files.saveFile.useMutation({
     onSuccess: () => {
-      toast.success("Successfully added file metadata to database!");
+      toast.success("File uploaded successfully!");
       if (userId) {
         queryClient.invalidateQueries({
           queryKey: ["trpc", "files", "getUserFiles"],
@@ -68,10 +57,6 @@ const UploadCareerDoc = () => {
       toast.error(error.message || "Failed to save file metadata");
     },
   });
-
-  // Main form submission handler
-  // This runs when form.handleSubmit() is called
-  // It validates the file separately (not in schema)
 
   const handleFormSubmit = async (formValues: { customName: string }) => {
     if (!document) {
@@ -85,15 +70,13 @@ const UploadCareerDoc = () => {
         : document.name.replaceAll(" ", "-");
 
       const fileName = user ? `${user}-${baseFileName}` : baseFileName;
-      const contentType: "application/pdf" | "text/plain" | "application/msword" | "application/vnd.openxmlformats-officedocument.wordprocessingml.document" = (document.type as any) || "application/pdf";
+      const contentType = (document.type as any) || "application/pdf";
 
-      // Use tRPC mutation to get presigned URL
       const { uploadURL, s3Key } = await presignedUrlMutation.mutateAsync({
         fileName,
         contentType,
       });
 
-      // Upload file directly to S3 using the presigned URL
       const uploadResponse = await fetch(uploadURL, {
         method: "PUT",
         body: document,
@@ -106,9 +89,6 @@ const UploadCareerDoc = () => {
         return;
       }
 
-      toast.success("Successfully uploaded file to S3!");
-
-      // Use tRPC mutation to save file metadata to database
       await saveFileMutation.mutateAsync({
         s3Key,
         fileName,
@@ -134,74 +114,106 @@ const UploadCareerDoc = () => {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        // Trigger form submission, which validates and calls onSubmit
+        e.stopPropagation();
         form.handleSubmit();
       }}
       className="space-y-6"
     >
-      {/* File Input Field */}
-      <Field>
-        <FieldLabel htmlFor="file-upload">
-          Upload your Career Document
-        </FieldLabel>
-        <FieldDescription>
-          Supported formats: .txt, .pdf, .doc, .docx
-        </FieldDescription>
-        <Input
-          type="file"
-          id="file-upload"
-          accept=".txt,.pdf,.doc,.docx"
-          onChange={(event) => {
-            // Store the selected file in state
-            // This is separate from the form state
-            if (event.target.files) {
-              setDocument(event.target.files[0]);
-            }
-          }}
-          className="block w-full text-sm"
-        />
-        {document && (
-          <p className="text-sm text-muted-foreground mt-2">
-            Selected: {document.name} ({(document.size / 1024).toFixed(2)} KB)
-          </p>
-        )}
-      </Field>
+      <div className="space-y-4">
+        {/* Custom Dropzone UI */}
+        <div className="relative group">
+          <Card className="border-dashed border-2 border-border hover:border-primary transition-colors cursor-pointer bg-muted/20 relative overflow-hidden">
+            <Input
+              type="file"
+              id="file-upload"
+              accept=".txt,.pdf,.doc,.docx"
+              onChange={(event) => {
+                if (event.target.files) {
+                  setDocument(event.target.files[0]);
+                }
+              }}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
+            <CardContent className="flex flex-col items-center justify-center py-12 space-y-4 pointer-events-none">
+              <div className="p-4 bg-background rounded-sm border border-border group-hover:scale-110 transition-transform duration-300">
+                <Upload className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+              <div className="text-center space-y-1">
+                <Text className="font-normal">
+                  {document
+                    ? "File Selected"
+                    : "Click to upload or drag and drop"}
+                </Text>
+                <Text variant="muted">
+                  {document
+                    ? `${document.name} (${(document.size / 1024).toFixed(
+                        2
+                      )} KB)`
+                    : "PDF, TXT, DOCX (Max 10MB)"}
+                </Text>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Custom Name Field - Connected to form state */}
-      <form.Field
-        name="customName"
-        children={(field) => {
-          // Check if field has validation errors and has been touched
-          const isInvalid =
-            field.state.meta.isTouched && !field.state.meta.isValid;
+          {document && (
+            <div className="absolute top-2 right-2 z-20">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-sm bg-background/80 hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setDocument(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
 
-          return (
-            <Field data-invalid={isInvalid}>
-              <FieldLabel htmlFor={field.name}>File Name (optional)</FieldLabel>
-              <FieldDescription>
-                Give your file a custom name for easier organization
-              </FieldDescription>
+        {/* File Name Input */}
+        <form.Field
+          name="customName"
+          children={(field) => (
+            <div className="space-y-2">
+              <label
+                htmlFor={field.name}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                File Name (Optional)
+              </label>
               <Input
                 id={field.name}
-                name={field.name}
                 type="text"
                 placeholder="e.g., Resume 2024"
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
-                aria-invalid={isInvalid}
+                className="font-mono"
               />
-              {/* Show error message if validation failed */}
-              {isInvalid && <FieldError errors={field.state.meta.errors} />}
-            </Field>
-          );
-        }}
-      />
+              {field.state.meta.isTouched &&
+                field.state.meta.errors.length > 0 && (
+                  <p className="text-xs text-destructive font-mono mt-1">
+                    {field.state.meta.errors.join(", ")}
+                  </p>
+                )}
+            </div>
+          )}
+        />
 
-      {/* Submit Button */}
-      <Button type="submit" disabled={saveFileMutation.isPending || presignedUrlMutation.isPending}>
-        {saveFileMutation.isPending || presignedUrlMutation.isPending ? "Uploading..." : "Upload"}
-      </Button>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={
+            saveFileMutation.isPending ||
+            presignedUrlMutation.isPending ||
+            !document
+          }
+        >
+          {saveFileMutation.isPending || presignedUrlMutation.isPending
+            ? "Uploading..."
+            : "Upload Document"}
+        </Button>
+      </div>
     </form>
   );
 };

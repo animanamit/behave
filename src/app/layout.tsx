@@ -4,16 +4,23 @@ import { Toaster } from "sonner";
 
 import "./globals.css";
 
-import { Inter, Geist_Mono as V0_Font_Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import Providers from "@/providers";
 
 // Initialize fonts
-const _geistMono = V0_Font_Geist_Mono({
+// Using Geist Sans as primary font
+const geistSans = Geist({
   subsets: ["latin"],
+  variable: "--font-sans",
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
 
-const inter = Inter({ subsets: ["latin"] });
+// Using Geist Mono for data/code
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+});
 
 export const metadata: Metadata = {
   title: "Interview Coach AI - Practice Behavioral Interviews",
@@ -29,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} font-sans antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
         <Toaster />
       </body>

@@ -14,7 +14,7 @@ export function GoogleSignInButton() {
       await authClient.signIn.social(
         {
           provider: "google",
-          callbackURL: "/",
+          callbackURL: "/home",
         },
         {
           onError: (ctx) => {
