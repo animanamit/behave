@@ -28,9 +28,9 @@ export function Section({
   return (
     <section
       className={cn(
-        "py-8 md:py-12 px-4 md:px-6 w-full", // Reduced padding from py-12/20
+        "py-8 md:py-12 w-full", // Reduced padding from py-12/20
         {
-          "max-w-5xl mx-auto": !fullWidth, // Reduced max-width from 7xl
+          "mx-auto": !fullWidth, // Reduced max-width from 7xl
         },
         className
       )}

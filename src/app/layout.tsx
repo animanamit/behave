@@ -23,10 +23,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Interview Coach AI - Practice Behavioral Interviews",
+  title: "Behave - Practice Behavioral Interviews",
   description:
     "AI-powered behavioral interview practice with personalized feedback",
-  generator: "v0.app",
 };
 
 export default function RootLayout({
@@ -36,7 +35,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
+      >
         <Providers>{children}</Providers>
         <Toaster />
       </body>

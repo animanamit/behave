@@ -18,7 +18,6 @@ export default function HomePage() {
   return (
     <HomeLayout>
       <div className="max-w-5xl mx-auto space-y-8">
-        {/* Header */}
         <div className="flex items-end justify-between border-b border-border pb-6">
           <div className="space-y-1">
             <Heading as="h1">Welcome, {session?.user?.name || "User"}</Heading>
@@ -28,22 +27,12 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Main Content */}
         <Grid cols={1} className="gap-12">
-          {/* Upload Section */}
           <Section className="p-0 md:p-0">
             <Heading as="h3" className="mb-6">
               Upload New Document
             </Heading>
             <UploadCareerDoc />
-          </Section>
-
-          {/* Files List Section */}
-          <Section className="p-0 md:p-0">
-            <Heading as="h3" className="mb-6">
-              Your Documents
-            </Heading>
-            <UserFilesTable />
           </Section>
         </Grid>
       </div>
