@@ -57,3 +57,41 @@ export const UploadCareerDocSchema = z.object({
       "File must be less than 10MB"
     ),
 });
+
+// ------------------------------------------------------------------
+// AI GENERATION SCHEMAS
+// ------------------------------------------------------------------
+
+/**
+ * Schema for a single STAR interview answer.
+ * 
+ * The AI SDK uses these descriptions to guide the model on what to generate.
+ * For example, describing 'competency' helps the model understand it should
+ * pick a specific skill like "Leadership" or "Conflict Resolution".
+ */
+export const STARAnswerSchema = z.object({
+  id: z.number().describe("Unique identifier for the answer, sequential (1, 2, 3...)"),
+  competency: z.string().describe("The behavioral competency being addressed (e.g., Leadership, Teamwork, Problem Solving)"),
+  question: z.string().describe("The interview question that prompts this story"),
+  situation: z.string().describe("The 'Situation' part of the STAR method: Context and background"),
+  task: z.string().describe("The 'Task' part of the STAR method: What needed to be done"),
+  action: z.string().describe("The 'Action' part of the STAR method: What YOU specifically did"),
+  result: z.string().describe("The 'Result' part of the STAR method: The outcome and impact"),
+  fullAnswer: z.string().optional().describe("The complete answer text, combining all STAR sections naturally"),
+});
+
+/**
+ * Schema for the entire generation response.
+ * 
+ * We wrap the array in an object (`answers`) rather than returning the array directly.
+ * This is a best practice for streaming objects, as it gives the stream a stable "root" 
+ * and allows us to add other top-level fields later if needed (e.g., "summary", "jobTitle").
+ */
+export const GenerateAnswersSchema = z.object({
+  answers: z.array(STARAnswerSchema).describe("List of generated behavioral interview answers"),
+});
+
+// Export TypeScript types derived from the Zod schemas
+// Frontend components can import these to ensure type safety when using the data
+export type STARAnswer = z.infer<typeof STARAnswerSchema>;
+export type GenerateAnswersResponse = z.infer<typeof GenerateAnswersSchema>;

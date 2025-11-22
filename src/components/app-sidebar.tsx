@@ -6,6 +6,7 @@ import {
   User,
   Mic,
   FileText,
+  Sparkles,
 } from "lucide-react";
 import {
   Sidebar,
@@ -51,6 +52,16 @@ const items = [
     title: "Answers",
     url: "/answers",
     icon: FileText,
+  },
+  {
+    title: "Answers (Inngest Polling)",
+    url: "/answers-inngest-polling",
+    icon: Sparkles,
+  },
+  {
+    title: "Answers (Inngest SSE)",
+    url: "/answers-inngest-sse",
+    icon: Sparkles,
   },
   {
     title: "Settings",
