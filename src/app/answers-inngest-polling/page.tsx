@@ -57,14 +57,15 @@ const AnswersInngestPollingPage = () => {
   } = useQuery({
     queryKey: ["answers"], // Cache key (React Query caches results)
     queryFn: async () => {
-      // This function is called every 2 seconds (when polling is active)
+      // This function is called every 500ms (when polling is active)
+      // Frequent polling catches answers as they're saved one-by-one
       const res = await fetch("/api/get-answers");
       if (!res.ok) throw new Error("Failed to fetch");
       return res.json() as Promise<{ answers: STARAnswer[]; count: number }>;
     },
-    // Poll every 2 seconds ONLY if we're generating
+    // Poll every 500ms ONLY if we're generating (frequent for responsive UX)
     // When isGenerating is false, polling stops (saves resources)
-    refetchInterval: isGenerating ? 2000 : false,
+    refetchInterval: isGenerating ? 500 : false,
     // No "enabled" check needed - refetchInterval handles it
   });
 

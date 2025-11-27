@@ -7,161 +7,116 @@ import { Heading } from "@/components/ui/typography";
 import { AnswersList } from "@/components/answers/answers-list";
 import { STARAnswer } from "@/lib/zod-schemas";
 import { Sparkles } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useEffectEvent } from "react";
 import { toast } from "sonner";
 
-const TARGET_TOTAL = 25;
+const TARGET_TOTAL_ANSWERS = 25;
 
-/**
- * ANSWERS PAGE (Inngest + SSE)
- *
- * This version uses:
- * 1. Inngest for background job processing (no timeout limits)
- * 2. Server-Sent Events (SSE) for real-time push updates
- *
- * HOW SSE WORKS ON THE FRONTEND:
- * - EventSource API opens a persistent HTTP connection
- * - Server keeps connection open and sends events as they happen
- * - Frontend receives events INSTANTLY (no polling delay)
- * - Browser automatically reconnects if connection drops
- *
- * KEY DIFFERENCES FROM POLLING:
- * - Uses EventSource API instead of React Query polling
- * - Updates appear INSTANTLY (0ms latency vs 0-2s delay)
- * - Lower server load (1 persistent connection vs many requests)
- * - More complex code (connection lifecycle management)
- *
- * KEY DIFFERENCES FROM STREAMING:
- * - No useObject hook (we use EventSource instead)
- * - No recursive batching (Inngest handles it)
- * - User can close laptop (job continues in background)
- * - Answers appear in chunks (5 at a time) vs letter-by-letter
- * - True push updates (server pushes to client) vs pull (client requests)
- */
 const AnswersInngestSSEPage = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [eventId, setEventId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<STARAnswer[]>([]);
-  
-  // Ref to store EventSource instance for cleanup
-  const eventSourceRef = useRef<EventSource | null>(null);
 
   // -------------------------------------------------------------------------
-  // SSE CONNECTION MANAGEMENT
+  // EFFECT EVENTS
   // -------------------------------------------------------------------------
-  // This effect manages the EventSource connection lifecycle:
-  // - Opens connection when generation starts
-  // - Listens for events (initial, update, heartbeat)
-  // - Cleans up when component unmounts or generation stops
-  useEffect(() => {
-    // Only connect if we're generating or have existing answers
-    // This prevents unnecessary connections when page first loads
-    if (!isGenerating && answers.length === 0) {
-      return;
+  // These functions always read the LATEST state values when called,
+  // but they don't cause the useEffect to re-run when those values change.
+  // This solves the "stale closure" problem without manual ref syncing.
+
+  const handleInitial = useEffectEvent((data: { answers?: STARAnswer[] }) => {
+    if (data.answers && data.answers.length > 0) {
+      setAnswers(data.answers);
     }
+  });
 
-    // -----------------------------------------------------------------------
-    // STEP 1: Create EventSource Connection
-    // -----------------------------------------------------------------------
-    // EventSource opens a persistent HTTP connection to the SSE endpoint
-    // The connection stays open until explicitly closed
-    const eventSource = new EventSource("/api/answers-stream");
-    eventSourceRef.current = eventSource;
-
-    // -----------------------------------------------------------------------
-    // STEP 2: Listen for "initial" Event
-    // -----------------------------------------------------------------------
-    // Fired immediately when connection opens
-    // Contains current state (existing answers if any)
-    eventSource.addEventListener("initial", (e) => {
-      const data = JSON.parse(e.data);
-      setAnswers(data.answers || []);
-    });
-
-    // -----------------------------------------------------------------------
-    // STEP 3: Listen for "update" Event (THE IMPORTANT ONE)
-    // -----------------------------------------------------------------------
-    // Fired whenever Inngest saves new answers
-    // This is the real-time push notification
-    eventSource.addEventListener("update", (e) => {
-      const data = JSON.parse(e.data);
-      
-      // Update state immediately (triggers UI re-render)
+  const handleUpdate = useEffectEvent(
+    (data: { answers?: STARAnswer[]; count: number }) => {
       setAnswers(data.answers || []);
 
-      // Update toast with current progress
+      // isGenerating here is ALWAYS the current value, not a stale closure
       if (isGenerating && data.count > 0) {
         toast.loading(
-          `Generating answers... (${data.count}/${TARGET_TOTAL})`,
+          `Generating answers... (${data.count}/${TARGET_TOTAL_ANSWERS})`,
           { id: "generation-status" }
         );
       }
 
-      // Check if generation is complete
-      if (data.count >= TARGET_TOTAL && isGenerating) {
+      if (data.count >= TARGET_TOTAL_ANSWERS && isGenerating) {
         setIsGenerating(false);
         toast.success("All 25 answers generated successfully!", {
           id: "generation-status",
         });
       }
+    }
+  );
+
+  const handleHeartbeat = useEffectEvent(() => {
+    console.log("[SSE] Heartbeat received");
+  });
+
+  const handleError = useEffectEvent((error: Event) => {
+    console.error("[SSE] Connection error:", error);
+    // Could add UI feedback here - isGenerating would be current
+    if (isGenerating) {
+      toast.error("Connection lost. Attempting to reconnect...", {
+        id: "sse-error",
+      });
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // SSE CONNECTION MANAGEMENT
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    if (!isGenerating) return;
+
+    const eventSource = new EventSource("/api/answers-stream");
+
+    // All handlers use Effect Events - they see current state,
+    // but don't need to be in the dependency array
+    eventSource.addEventListener("initial", (e) => {
+      handleInitial(JSON.parse(e.data));
     });
 
-    // -----------------------------------------------------------------------
-    // STEP 4: Listen for "heartbeat" Event
-    // -----------------------------------------------------------------------
-    // Fired every 30 seconds to keep connection alive
-    // We don't need to do anything, but it prevents connection timeout
+    eventSource.addEventListener("update", (e) => {
+      handleUpdate(JSON.parse(e.data));
+    });
+
     eventSource.addEventListener("heartbeat", () => {
-      // Connection is alive, no action needed
+      handleHeartbeat();
     });
 
-    // -----------------------------------------------------------------------
-    // STEP 5: Handle Connection Errors
-    // -----------------------------------------------------------------------
-    // EventSource automatically reconnects on errors
-    // We just log for debugging
     eventSource.onerror = (error) => {
-      console.error("[SSE] Connection error:", error);
-      // EventSource will automatically attempt to reconnect
-      // No manual reconnection needed!
+      handleError(error);
     };
 
-    // -----------------------------------------------------------------------
-    // STEP 6: Cleanup on Unmount
-    // -----------------------------------------------------------------------
-    // When component unmounts or effect re-runs, close the connection
-    // This prevents memory leaks and unnecessary connections
     return () => {
       eventSource.close();
-      eventSourceRef.current = null;
     };
-  }, [isGenerating]); // Re-run effect when isGenerating changes
+  }, [isGenerating]);
+  // ^ Clean dependency array!
+  // Effect Events are intentionally NOT listed here.
+  // They're stable references that always read current values.
 
   // -------------------------------------------------------------------------
   // HANDLERS
   // -------------------------------------------------------------------------
-  const startGeneration = async () => {
-    // Prevent multiple clicks if already generating
+  const startGeneration = useCallback(async () => {
     if (isGenerating) return;
 
-    // Explicitly dismiss any previous toast to avoid stacking
     toast.dismiss("generation-status");
-
     setIsGenerating(true);
     setEventId(null);
     setAnswers([]);
 
-    // Clear old answers first (start fresh)
     await fetch("/api/clear-answers", { method: "POST" });
 
-    // Show initial toast with consistent ID
     toast.loading("Starting background generation...", {
       id: "generation-status",
     });
 
     try {
-      // Trigger the Inngest job
-      // This returns immediately (job runs in background)
       const res = await fetch("/api/generate-answers-inngest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -173,14 +128,10 @@ const AnswersInngestSSEPage = () => {
       const data = await res.json();
       setEventId(data.eventId);
 
-      // Update toast
       toast.loading(
-        `Generation started! Waiting for real-time updates... (0/${TARGET_TOTAL})`,
+        `Generation started! Waiting for real-time updates... (0/${TARGET_TOTAL_ANSWERS})`,
         { id: "generation-status" }
       );
-
-      // SSE connection (created in useEffect) will automatically receive updates
-      // No polling needed - updates are pushed instantly!
     } catch (error) {
       console.error("Failed to start generation:", error);
       setIsGenerating(false);
@@ -188,7 +139,7 @@ const AnswersInngestSSEPage = () => {
         id: "generation-status",
       });
     }
-  };
+  }, [isGenerating]);
 
   const count = answers.length;
 
@@ -197,16 +148,14 @@ const AnswersInngestSSEPage = () => {
       <div className="max-w-5xl mx-auto space-y-8">
         <div className="border-b border-border pb-4 flex justify-between items-center">
           <Heading as="h2">Your Generated Answers (Inngest + SSE)</Heading>
-          {/* Status indicator */}
           {isGenerating && (
             <span className="text-sm text-muted-foreground animate-pulse flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
-              Generating {count}/{TARGET_TOTAL}...
+              Generating {count}/{TARGET_TOTAL_ANSWERS}...
             </span>
           )}
         </div>
 
-        {/* Control Section */}
         <Section className="p-0">
           <div className="space-y-2">
             <Button
@@ -232,29 +181,27 @@ const AnswersInngestSSEPage = () => {
           </div>
         </Section>
 
-        {/* Info Box */}
         {isGenerating && (
           <div className="p-4 border border-blue-500/50 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-300">
             <p className="font-semibold">Background Generation Active (SSE)</p>
             <p className="text-sm mt-1">
               Your answers are being generated in the background. Updates will
-              appear in real-time via Server-Sent Events (instant push notifications).
-              You can close this tab and come back later - the job will continue running!
+              appear in real-time via Server-Sent Events (instant push
+              notifications). You can close this tab and come back later - the
+              job will continue running!
             </p>
           </div>
         )}
 
-        {/* The Main Answers List */}
         {(answers.length > 0 || isGenerating) && (
           <Section className="p-0">
             <AnswersList
               answers={answers}
-              isLoading={isGenerating && count < TARGET_TOTAL}
+              isLoading={isGenerating && count < TARGET_TOTAL_ANSWERS}
             />
           </Section>
         )}
 
-        {/* Empty State */}
         {!isGenerating && answers.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
             <p>No answers generated yet.</p>

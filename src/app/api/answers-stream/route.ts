@@ -5,7 +5,7 @@ import { db } from "@/db/drizzle";
 import { starAnswers } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-const POLL_INTERVAL_MS = 2000;
+const POLL_INTERVAL_MS = 500; // Poll DB every 500ms to catch answers as they're saved
 
 type SSEPayload = {
   answers: {

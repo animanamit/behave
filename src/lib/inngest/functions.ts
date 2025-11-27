@@ -161,39 +161,52 @@ export const generateAnswers = inngest.createFunction(
       allAnswers.push(...batchResult.answers);
 
       // -----------------------------------------------------------------------
-      // STEP 2C: Save Incrementally to Database
+      // STEP 2C: Save Answers Individually (One-by-One)
       // -----------------------------------------------------------------------
-      // This is the KEY difference from waiting until the end.
-      // By saving after each batch, the frontend can see progress:
-      // - Polling: Next poll (within 2s) will see new answers
-      // - SSE: Instant push notification to frontend
-      await step.run(`save-batch-${batchNumber}`, async () => {
-        console.log(
-          `[Inngest] Saving batch ${batchNumber} (${allAnswers.length} total answers so far)`
-        );
+      // APPROACH C: Batch generation + Individual saves
+      // - Generate 5 answers together (reliable)
+      // - Save each answer individually (progressive UX)
+      // - Both polling and SSE frontends see one-by-one appearance
+      //
+      // WHY THIS WORKS:
+      // - Polling: Frontend queries DB every 2s, sees 1, 2, 3, ... 5 answers
+      // - SSE: Server polls DB every 2s, pushes update when count changes
+      // - Result: User sees answers appear one-at-a-time, not all 5 together
+      //
+      // Each save is a separate Inngest step so progress is tracked individually
+      for (let i = 0; i < batchResult.answers.length; i++) {
+        const answer = batchResult.answers[i];
+        const answerNumber = allAnswers.length + i + 1; // 1-indexed position
 
-        // Map the generated answers to the database schema
-        const answersToInsert = batchResult.answers.map((answer) => ({
-          userId: userId,
-          competency: answer.competency,
-          question: answer.question,
-          situation: answer.situation,
-          task: answer.task,
-          action: answer.action,
-          result: answer.result,
-          // Handle optional fullAnswer, though our prompt requests it
-          fullAnswer:
-            answer.fullAnswer ||
-            `${answer.situation}\n\n${answer.task}\n\n${answer.action}\n\n${answer.result}`,
-        }));
+        await step.run(
+          `save-answer-batch${batchNumber}-${i + 1}`,
+          async () => {
+            const answerToInsert = {
+              userId: userId,
+              competency: answer.competency,
+              question: answer.question,
+              situation: answer.situation,
+              task: answer.task,
+              action: answer.action,
+              result: answer.result,
+              // Handle optional fullAnswer
+              fullAnswer:
+                answer.fullAnswer ||
+                `${answer.situation}\n\n${answer.task}\n\n${answer.action}\n\n${answer.result}`,
+            };
 
-        // Insert into database
-        await db.insert(starAnswers).values(answersToInsert);
+            // Save ONE answer at a time
+            await db.insert(starAnswers).values([answerToInsert]);
 
-        console.log(
-          `[Inngest] Saved batch ${batchNumber} to database - UI should now see ${allAnswers.length} answers`
-        );
-      });
+            console.log(
+              `[Inngest] ✓ Saved answer ${answerNumber}/25 (${answer.competency})`
+            );
+            }
+            );
+
+            // NO ARTIFICIAL DELAYS - Frontend polls frequently (500ms) to catch each save
+            // This is more honest: answers appear as fast as they're generated
+      }
     }
 
     // -------------------------------------------------------------------------

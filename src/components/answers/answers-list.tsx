@@ -40,14 +40,14 @@ export function AnswersList({ answers, isLoading }: AnswersListProps) {
             <Card
               key={idx}
               className={cn(
-                // Animation: Fade in and slide up when a new card appears
-                "animate-in fade-in slide-in-from-bottom-2 duration-500 overflow-hidden transition-all",
+                // Animation: Smooth fade in and slide up when a new card appears
+                "animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out overflow-hidden transition-all",
                 // Styling:
                 // If active: Blue border + Glow + Shadow (User feedback for "I'm working here")
-                // If static: Standard border
+                // If static: Standard border with subtle hover effect
                 isActive
-                  ? "border-primary/50 shadow-md ring-1 ring-primary/10"
-                  : "border-border"
+                  ? "border-primary/50 shadow-lg ring-1 ring-primary/20 bg-primary/5"
+                  : "border-border hover:border-primary/30 hover:shadow-sm"
               )}
             >
               <CardHeader className="bg-muted/5 pb-3">

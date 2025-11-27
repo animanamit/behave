@@ -30,9 +30,9 @@ export default function HomePage() {
         <Grid cols={1} className="gap-12">
           <Section className="p-0 md:p-0">
             <Heading as="h3" className="mb-6">
-              Upload New Document
+              Your Documents
             </Heading>
-            <UploadCareerDoc />
+            <UserFilesTable />
           </Section>
         </Grid>
       </div>
