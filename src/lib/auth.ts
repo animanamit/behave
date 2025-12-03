@@ -1,10 +1,10 @@
 import { betterAuth } from "better-auth";
-import { Pool } from "pg";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { db } from "@/db/prisma";
 
 export const auth = betterAuth({
-  database: new Pool({
-    connectionString: process.env.DATABASE_URL || "",
+  database: prismaAdapter(db, {
+    provider: "postgresql",
   }),
   secret: process.env.BETTER_AUTH_SECRET,
 

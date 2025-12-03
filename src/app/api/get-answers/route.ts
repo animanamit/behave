@@ -1,9 +1,7 @@
 // src/app/api/get-answers/route.ts
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { db } from "@/db/drizzle";
-import { starAnswers } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { db } from "@/db/prisma";
 
 /**
  * POLLING ENDPOINT: Get Answers
@@ -49,11 +47,14 @@ export async function GET(req: Request) {
     // -------------------------------------------------------------------------
     // Get answers from PostgreSQL database
     // We order by createdAt to ensure they appear in generation order
-    const answers = await db
-      .select()
-      .from(starAnswers)
-      .where(eq(starAnswers.userId, session.user.id))
-      .orderBy(starAnswers.createdAt);
+    const answers = await db.starAnswer.findMany({
+      where: {
+        userId: session.user.id,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
 
     // -------------------------------------------------------------------------
     // STEP 3: Format Response

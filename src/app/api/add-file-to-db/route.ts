@@ -1,8 +1,7 @@
 import { SaveFileSchema } from "@/lib/zod-schemas";
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db/drizzle";
+import { db } from "@/db/prisma";
 import z from "zod";
-import { files } from "@/db/schema";
 
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -30,12 +29,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await db.insert(files).values({
-      userId,
-      s3Key,
-      fileName,
-      fileSize,
-      contentType,
+    await db.file.create({
+      data: {
+        userId,
+        s3Key,
+        fileName,
+        fileSize,
+        contentType,
+      },
     });
 
     return NextResponse.json({ success: true });

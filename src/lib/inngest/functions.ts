@@ -2,9 +2,7 @@
 import { inngest } from "@/lib/inngest/inngest";
 import { generateObject } from "ai"; // Note: generateObject, NOT streamObject
 import { GenerateAnswersSchema } from "@/lib/zod-schemas";
-import { db } from "@/db/drizzle";
-import { starAnswers } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { db } from "@/db/prisma";
 
 /**
  * INNGEST FUNCTION: Generate Interview Answers
@@ -56,7 +54,11 @@ export const generateAnswers = inngest.createFunction(
       console.log(
         `[Inngest] Clearing previously generated answers for ${userId}`
       );
-      await db.delete(starAnswers).where(eq(starAnswers.userId, userId));
+      await db.starAnswer.deleteMany({
+        where: {
+          userId: userId,
+        },
+      });
     });
 
     // -------------------------------------------------------------------------
@@ -196,7 +198,9 @@ export const generateAnswers = inngest.createFunction(
             };
 
             // Save ONE answer at a time
-            await db.insert(starAnswers).values([answerToInsert]);
+            await db.starAnswer.create({
+              data: answerToInsert,
+            });
 
             console.log(
               `[Inngest] ✓ Saved answer ${answerNumber}/25 (${answer.competency})`

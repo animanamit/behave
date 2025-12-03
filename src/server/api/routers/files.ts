@@ -1,7 +1,5 @@
 import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { db } from "@/db/drizzle";
-import { files } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { db } from "@/db/prisma";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { UserFilesSchema, SaveFileSchema, PresignedURLRequestSchema } from "@/lib/zod-schemas";
@@ -25,10 +23,11 @@ export const filesRouter = createTRPCRouter({
       }
 
       try {
-        const data = await db
-          .select()
-          .from(files)
-          .where(eq(files.userId, input.userId));
+        const data = await db.file.findMany({
+          where: {
+            userId: input.userId,
+          },
+        });
 
         // Parse the data with UserFilesSchema to coerce uploadedAt from string to Date
         // so the  client receives properly Date objects instead of strings
@@ -87,12 +86,14 @@ export const filesRouter = createTRPCRouter({
       }
 
       try {
-        await db.insert(files).values({
-          userId: input.userId,
-          s3Key: input.s3Key,
-          fileName: input.fileName,
-          fileSize: input.fileSize,
-          contentType: input.contentType,
+        await db.file.create({
+          data: {
+            userId: input.userId,
+            s3Key: input.s3Key,
+            fileName: input.fileName,
+            fileSize: input.fileSize,
+            contentType: input.contentType,
+          },
         });
 
         return { success: true };

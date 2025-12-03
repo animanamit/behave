@@ -1,9 +1,7 @@
 // src/app/api/clear-answers/route.ts
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { db } from "@/db/drizzle";
-import { starAnswers } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { db } from "@/db/prisma";
 
 /**
  * CLEAR ANSWERS ENDPOINT
@@ -21,8 +19,12 @@ export async function POST(req: Request) {
     }
 
     // Delete all answers for this user
-    await db.delete(starAnswers).where(eq(starAnswers.userId, session.user.id));
-    
+    await db.starAnswer.deleteMany({
+      where: {
+        userId: session.user.id,
+      },
+    });
+
     return Response.json({ success: true });
   } catch (error) {
     console.error("Failed to clear answers:", error);

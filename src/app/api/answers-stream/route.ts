@@ -1,9 +1,7 @@
 // src/app/api/answers-stream/route.ts
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { db } from "@/db/drizzle";
-import { starAnswers } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { db } from "@/db/prisma";
 
 const POLL_INTERVAL_MS = 500; // Poll DB every 500ms to catch answers as they're saved
 
@@ -30,11 +28,14 @@ type UserChannel = {
 const userChannels = new Map<string, UserChannel>();
 
 async function fetchAnswers(userId: string): Promise<SSEPayload["answers"]> {
-  const answers = await db
-    .select()
-    .from(starAnswers)
-    .where(eq(starAnswers.userId, userId))
-    .orderBy(starAnswers.createdAt);
+  const answers = await db.starAnswer.findMany({
+    where: {
+      userId: userId,
+    },
+    orderBy: {
+      createdAt: 'asc',
+    },
+  });
 
   return answers.map((a, i) => ({
     id: i + 1,

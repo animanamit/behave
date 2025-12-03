@@ -1,0 +1,30 @@
+import { PrismaClient } from "@/generated/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+// Create PostgreSQL connection pool
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+// Create Prisma adapter
+const adapter = new PrismaPg(pool);
+
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    adapter,
+    log:
+      process.env.NODE_ENV === "development"
+        ? ["query", "error", "warn"]
+        : ["error"],
+  });
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+// For backwards compatibility with existing imports
+export const db = prisma;
