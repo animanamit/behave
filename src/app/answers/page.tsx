@@ -2,182 +2,350 @@
 
 import { HomeLayout } from "@/components/layouts/home-layout";
 import { Button } from "@/components/ui/button";
-import { Section } from "@/components/ui/layout";
 import { Heading } from "@/components/ui/typography";
 import { AnswersList } from "@/components/answers/answers-list";
-import { experimental_useObject as useObject } from "@ai-sdk/react";
-import { GenerateAnswersSchema, STARAnswer } from "@/lib/zod-schemas";
-import { Sparkles } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { STARAnswer } from "@/lib/zod-schemas";
+import {
+  Sparkles,
+  FileText,
+  Loader2,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+} from "lucide-react";
+import { useState, useCallback, useEffect, useEffectEvent } from "react";
 import { toast } from "sonner";
+import { DataTable } from "@/components/user-files/data-table";
+import { columns } from "@/components/user-files/columns";
+import { trpc } from "@/lib/trpc-client";
+import { authClient } from "@/lib/auth-client";
+import { RowSelectionState } from "@tanstack/react-table";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
-// BATCH CONFIGURATION
-// We generate 5 answers at a time to respect the 60s serverless timeout.
-// 5 batches x 5 answers = 25 total answers.
-const BATCH_SIZE = 5;
-const TARGET_TOTAL = 25;
+const TARGET_TOTAL_ANSWERS = 25;
 
 const AnswersPage = () => {
-  // -------------------------------------------------------------------------
-  // STATE MANAGEMENT
-  // -------------------------------------------------------------------------
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [eventId, setEventId] = useState<string | null>(null);
+  const [streamingAnswers, setStreamingAnswers] = useState<STARAnswer[]>([]);
 
-  // Stores ALL fully completed answers from previous batches.
-  // This is our "permanent record" that grows as each batch finishes.
-  const [completedAnswers, setCompletedAnswers] = useState<STARAnswer[]>([]);
+  // File Selection State
+  const { data: session } = authClient.useSession();
+  const userId = session?.user.id;
 
-  // Tracks if the "Daisy Chain" process is currently active.
-  const [isChaining, setIsChaining] = useState(false);
+  // 1. Fetch Files
+  const filesQuery = trpc.files.getUserFiles.useQuery(
+    { userId: userId ?? "" },
+    { enabled: !!userId }
+  );
 
-  // We use a ref to toast ID so we can update the SAME toast message.
-  const toastIdRef = useRef<string | number | null>(null);
+  // 2. Fetch Existing Answers
+  const answersQuery = trpc.answers.getUserAnswers.useQuery(
+    { userId: userId ?? "" },
+    {
+      enabled: !!userId,
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  // 3. Selection State
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+
+  // 4. Helper to enforce Single Selection
+  const handleSelectionChange: React.Dispatch<
+    React.SetStateAction<RowSelectionState>
+  > = (updater) => {
+    const newSelection =
+      typeof updater === "function" ? updater(rowSelection) : updater;
+    const keys = Object.keys(newSelection);
+
+    // Keep only the most recently selected item
+    if (keys.length > 1) {
+      const lastKey = keys[keys.length - 1];
+      setRowSelection({ [lastKey]: true });
+    } else {
+      setRowSelection(newSelection);
+    }
+  };
+
+  // Get the selected file ID (if any)
+  const selectedFileId = Object.keys(rowSelection)[0];
 
   // -------------------------------------------------------------------------
-  // AI SDK HOOK: useObject
+  // EFFECT EVENTS
   // -------------------------------------------------------------------------
-  const { object, submit, isLoading, error } = useObject({
-    api: "/api/generate-answers",
-    schema: GenerateAnswersSchema,
-    // onFinish is ONLY responsible for saving the data.
-    // It does NOT decide what to do next. This avoids stale closure issues.
-    onFinish: ({ object: finishedObject }) => {
-      if (finishedObject?.answers) {
-        const newAnswers = finishedObject.answers as STARAnswer[];
-        setCompletedAnswers((prev) => [...prev, ...newAnswers]);
-      }
-    },
-    onError: (err) => {
-      console.error("Batch generation failed:", err);
-      setIsChaining(false);
-      if (toastIdRef.current) {
-        toast.error("Generation stopped due to an error.", {
-          id: toastIdRef.current,
-        });
-      }
-    },
+  const handleInitial = useEffectEvent((data: { answers?: STARAnswer[] }) => {
+    if (data.answers && data.answers.length > 0) {
+      setStreamingAnswers(data.answers);
+    }
   });
 
-  // -------------------------------------------------------------------------
-  // CHAINING LOGIC (The "Brain")
-  // -------------------------------------------------------------------------
-  // This effect monitors the 'completedAnswers' state.
-  // When a batch finishes (and 'isLoading' goes back to false), this decides
-  // whether to trigger the next batch or finish.
-  useEffect(() => {
-    // Only run if the process is active
-    if (!isChaining) return;
+  const handleUpdate = useEffectEvent(
+    (data: { answers?: STARAnswer[]; count: number }) => {
+      setStreamingAnswers(data.answers || []);
 
-    // Do NOT run if a request is currently in progress.
-    // We wait for 'isLoading' to flip to false (which happens after onFinish).
-    if (isLoading) return;
-
-    const currentCount = completedAnswers.length;
-
-    // CASE 1: We've reached the target (25). STOP.
-    if (currentCount >= TARGET_TOTAL) {
-      setIsChaining(false);
-      if (toastIdRef.current) {
-        toast.success("All 25 answers generated successfully!", {
-          id: toastIdRef.current,
-        });
-      }
-      return;
-    }
-
-    // CASE 2: We have some answers (e.g. 5, 10, 15...), but not all.
-    // Trigger the next batch.
-    // (Note: We check > 0 to avoid double-triggering on initial start,
-    // though 'isLoading' usually handles that).
-    if (currentCount > 0 && currentCount < TARGET_TOTAL) {
-      const nextId = currentCount + 1;
-      const currentBatchNumber = Math.floor(currentCount / BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(TARGET_TOTAL / BATCH_SIZE);
-
-      // Update toast
-      if (toastIdRef.current) {
+      if (isGenerating && data.count > 0 && data.count < TARGET_TOTAL_ANSWERS) {
         toast.loading(
-          `Generating batch ${currentBatchNumber + 1} of ${totalBatches}...`,
-          { id: toastIdRef.current }
+          `Crafting answers... (${data.count}/${TARGET_TOTAL_ANSWERS})`,
+          { id: "generation-status" }
         );
       }
 
-      // Trigger next batch
-      // We calculate 'nextId' directly from the length, ensuring it's always fresh.
-      submit({ startId: nextId, batchSize: BATCH_SIZE });
+      if (data.count >= TARGET_TOTAL_ANSWERS && isGenerating) {
+        setIsGenerating(false);
+        toast.success("All answers generated successfully!", {
+          id: "generation-status",
+        });
+        answersQuery.refetch();
+      }
     }
-  }, [completedAnswers.length, isChaining, isLoading, submit]);
+  );
+
+  const handleHeartbeat = useEffectEvent(() => {
+    console.log("[SSE] Heartbeat received");
+  });
+
+  const handleError = useEffectEvent((error: Event) => {
+    console.error("[SSE] Connection error:", error);
+    if (isGenerating) {
+      toast.error("Connection lost. Reconnecting...", {
+        id: "sse-error",
+      });
+    }
+  });
 
   // -------------------------------------------------------------------------
-  // DATA MERGING FOR UI
+  // SSE CONNECTION MANAGEMENT
   // -------------------------------------------------------------------------
-  // Merge static completed answers with the currently streaming ones.
-  const activeStreamAnswers = (object?.answers as STARAnswer[]) || [];
-  const allAnswersToDisplay = [...completedAnswers, ...activeStreamAnswers];
+  useEffect(() => {
+    if (!isGenerating) return;
+
+    const eventSource = new EventSource("/api/answers-stream");
+
+    eventSource.addEventListener("initial", (e) => {
+      handleInitial(JSON.parse(e.data));
+    });
+
+    eventSource.addEventListener("update", (e) => {
+      handleUpdate(JSON.parse(e.data));
+    });
+
+    eventSource.addEventListener("heartbeat", () => {
+      handleHeartbeat();
+    });
+
+    eventSource.onerror = (error) => {
+      handleError(error);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [isGenerating]);
 
   // -------------------------------------------------------------------------
   // HANDLERS
   // -------------------------------------------------------------------------
-  const startGeneration = () => {
-    // Reset state for a fresh run
-    setCompletedAnswers([]);
-    setIsChaining(true);
+  const startGeneration = useCallback(async () => {
+    if (isGenerating) return;
 
-    // Show initial toast
-    toastIdRef.current = toast.loading("Starting generation (Batch 1 of 5)...");
+    if (!selectedFileId) {
+      toast.error("Please select a resume file first");
+      return;
+    }
 
-    // Manually trigger the FIRST batch
-    submit({ startId: 1, batchSize: BATCH_SIZE });
-  };
+    toast.dismiss("generation-status");
+    setIsGenerating(true);
+    setEventId(null);
+    setStreamingAnswers([]);
+
+    await fetch("/api/clear-answers", { method: "POST" });
+
+    toast.loading("Starting generation...", {
+      id: "generation-status",
+    });
+
+    try {
+      const res = await fetch("/api/generate-answers-inngest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileId: selectedFileId,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to start generation");
+
+      const data = await res.json();
+      setEventId(data.eventId);
+      console.log("Job ID:", data.eventId); // Keep for dev debugging
+
+      toast.loading(`Started! Watch them appear live...`, {
+        id: "generation-status",
+      });
+    } catch (error) {
+      console.error("Failed to start generation:", error);
+      setIsGenerating(false);
+      toast.error("Failed to start generation. Please try again.", {
+        id: "generation-status",
+      });
+    }
+  }, [isGenerating, selectedFileId]);
+
+  // DATA DERIVATION
+  const displayAnswers = isGenerating
+    ? streamingAnswers
+    : answersQuery.data || [];
+
+  const hasAnswers = displayAnswers.length > 0;
+  const isLoadingAnswers = answersQuery.isLoading && !isGenerating;
+  const count = displayAnswers.length;
 
   return (
     <HomeLayout>
-      <div className="max-w-5xl mx-auto space-y-8">
-        <div className="border-b border-border pb-4 flex justify-between items-center">
-          <Heading as="h2">Your Generated Answers</Heading>
-          {/* Status text inside the header instead of the button */}
-          {isChaining && (
-            <span className="text-sm text-muted-foreground animate-pulse flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              Generating {allAnswersToDisplay.length}/{TARGET_TOTAL}...
-            </span>
+      <div className="max-w-5xl mx-auto pb-20">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-border pb-6">
+          <div>
+            <Heading as="h2">Your Generated Answers</Heading>
+            <p className="text-muted-foreground mt-1">
+              Personalized behavioral interview answers based on your
+              experience.
+            </p>
+          </div>
+
+          {/* Status Indicator in Header */}
+          {isGenerating && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium animate-pulse">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Generating {count}/{TARGET_TOTAL_ANSWERS}...
+            </div>
           )}
         </div>
 
-        {/* Control Section */}
-        <Section className="p-0">
-          <Button
-            onClick={startGeneration}
-            disabled={isChaining}
-            size="lg"
-            className="w-full md:w-auto"
-          >
-            {isChaining ? (
-              <>Streaming in progress...</>
+        <div className="space-y-8">
+          {/* Step 1: File Selection */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <h3 className="font-medium text-lg">Select Resume</h3>
+              </div>
+              {selectedFileId && (
+                <span className="text-sm text-muted-foreground hidden sm:inline-block">
+                  <CheckCircle2 className="w-4 h-4 inline mr-1 text-green-500" />
+                  Resume Selected
+                </span>
+              )}
+            </div>
+
+            {filesQuery.isLoading ? (
+              <div className="h-32 bg-muted/10 animate-pulse rounded-lg border border-border" />
             ) : (
-              <>
-                <Sparkles className="w-4 h-4 mr-2" />
-                {completedAnswers.length > 0
-                  ? "Regenerate All"
-                  : "Start Streaming Generation"}
-              </>
+              <div className="rounded-lg border border-border bg-card/50">
+                <DataTable
+                  columns={columns}
+                  data={filesQuery.data || []}
+                  rowSelection={rowSelection}
+                  setRowSelection={handleSelectionChange}
+                />
+              </div>
             )}
-          </Button>
-        </Section>
-
-        {/* Error Display */}
-        {error && (
-          <div className="p-4 border border-destructive/50 rounded-lg bg-destructive/10 text-destructive">
-            <p className="font-semibold">Generation Stopped</p>
-            <p className="text-sm opacity-90">{error.message}</p>
           </div>
-        )}
 
-        {/* The Main Answers List */}
-        {(allAnswersToDisplay.length > 0 || isChaining) && (
-          <Section className="p-0">
-            <AnswersList answers={allAnswersToDisplay} isLoading={isChaining} />
-          </Section>
-        )}
+          {/* Step 2: Action Area */}
+          <div className="flex flex-col items-start gap-4">
+            <Button
+              onClick={startGeneration}
+              disabled={isGenerating || !selectedFileId}
+              size="lg"
+              className={cn(
+                "w-full md:w-auto min-w-[200px] transition-all",
+                isGenerating ? "opacity-80" : "shadow-sm hover:shadow-md"
+              )}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Crafting Answers...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  {hasAnswers ? "Regenerate All Answers" : "Generate Answers"}
+                </>
+              )}
+            </Button>
+
+            {!selectedFileId && !isGenerating && (
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                Select a resume above to start generating
+              </p>
+            )}
+          </div>
+
+          {/* Friendly Progress Banner */}
+          {isGenerating && (
+            <Alert className="bg-primary/5 border-primary/20 animate-in fade-in slide-in-from-top-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <AlertTitle className="text-primary font-medium mb-1">
+                We're crafting your answers
+              </AlertTitle>
+              <AlertDescription className="text-muted-foreground">
+                This usually takes a minute or two. You can watch them appear
+                live below, or feel free to leave and come back—we'll keep
+                working in the background.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Content Area */}
+          <div className="pt-4">
+            {isLoadingAnswers ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-32 bg-muted/10 animate-pulse rounded-xl border border-border/50"
+                  />
+                ))}
+              </div>
+            ) : hasAnswers || isGenerating ? (
+              <AnswersList
+                answers={displayAnswers}
+                isLoading={
+                  isGenerating && displayAnswers.length < TARGET_TOTAL_ANSWERS
+                }
+              />
+            ) : (
+              /* Empty State */
+              <div className="flex flex-col items-center justify-center py-16 px-4 border border-dashed border-border rounded-xl bg-muted/5 text-center space-y-4">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                  <Sparkles className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-lg">
+                  No answers generated yet
+                </h3>
+                <p className="text-muted-foreground max-w-sm">
+                  Select your resume above and click "Generate Answers" to get
+                  personalized STAR-format responses for your next interview.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={startGeneration}
+                  disabled={!selectedFileId}
+                >
+                  Start Generation
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </HomeLayout>
   );

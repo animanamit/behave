@@ -28,7 +28,13 @@ export function Section({
   return (
     <section
       className={cn(
-        "py-8 md:py-12 w-full", // Reduced padding from py-12/20
+        "w-full", // Default to just w-full
+        // Only add default padding if user hasn't overridden it via className
+        // But since we can't easily detect that, we'll rely on the component's consumers 
+        // to pass p-0 if they want no padding.
+        // However, to maintain backward compat, we should keep some defaults but make them weaker?
+        // Actually, the best way is to allow overriding.
+        "py-8 md:py-12", // Default padding
         {
           "mx-auto": !fullWidth, // Reduced max-width from 7xl
         },

@@ -33,41 +33,36 @@ const items = [
     url: "/home",
     icon: Home,
   },
-  {
-    title: "Upload Document",
-    url: "/upload",
-    icon: Upload,
-  },
-  {
-    title: "Practice Session",
-    url: "/practice",
-    icon: Mic,
-  },
-  {
-    title: "Past Sessions",
-    url: "/review",
-    icon: History,
-  },
+  // {
+  //   title: "Upload Document",
+  //   url: "/upload",
+  //   icon: Upload,
+  // },
+  // {
+  //   title: "Practice Session",
+  //   url: "/practice",
+  //   icon: Mic,
+  // },
+  // {
+  //   title: "Past Sessions",
+  //   url: "/review",
+  //   icon: History,
+  // },
   {
     title: "Answers",
     url: "/answers",
     icon: FileText,
   },
-  {
-    title: "Answers (Inngest Polling)",
-    url: "/answers-inngest-polling",
-    icon: Sparkles,
-  },
-  {
-    title: "Answers (Inngest SSE)",
-    url: "/answers-inngest-sse",
-    icon: Sparkles,
-  },
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
-  },
+  // {
+  //   title: "Answers (Inngest Polling)",
+  //   url: "/answers-inngest-polling",
+  //   icon: Sparkles,
+  // },
+  // {
+  //   title: "Settings",
+  //   url: "/settings",
+  //   icon: Settings,
+  // },
 ];
 
 export function AppSidebar() {

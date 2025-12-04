@@ -44,13 +44,13 @@ export function AnswersList({ answers, isLoading }: AnswersListProps) {
                 "animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out overflow-hidden transition-all",
                 // Styling:
                 // If active: Blue border + Glow + Shadow (User feedback for "I'm working here")
-                // If static: Standard border with subtle hover effect
+                // If static: Borderless with subtle background hover
                 isActive
                   ? "border-primary/50 shadow-lg ring-1 ring-primary/20 bg-primary/5"
-                  : "border-border hover:border-primary/30 hover:shadow-sm"
+                  : "border-0 shadow-none bg-transparent hover:bg-muted/20"
               )}
             >
-              <CardHeader className="bg-muted/5 pb-3">
+              <CardHeader className="pb-3 pl-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {/* Index Badge (e.g., #1, #2) */}
@@ -61,7 +61,10 @@ export function AnswersList({ answers, isLoading }: AnswersListProps) {
                       #{answer.id || idx + 1}
                     </Badge>
                     {/* Competency Badge (e.g., Leadership) */}
-                    <Badge variant="secondary">
+                    <Badge
+                      variant="outline"
+                      className="border-muted-foreground/20"
+                    >
                       {answer?.competency || "Thinking..."}
                     </Badge>
                   </div>
@@ -80,7 +83,7 @@ export function AnswersList({ answers, isLoading }: AnswersListProps) {
                 </CardTitle>
               </CardHeader>
 
-              <CardContent className="pt-4 space-y-4">
+              <CardContent className="pt-2 pl-0 space-y-6">
                 {/* 
                   STAR SECTIONS
                   Each section (Situation, Task, Action, Result) follows the same pattern:
@@ -89,42 +92,42 @@ export function AnswersList({ answers, isLoading }: AnswersListProps) {
                   - Skeleton fallback if content is missing
                 */}
 
-                {/* Situation */}
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-muted-foreground uppercase tracking-wider text-xs">
+                {/* Situation - GREEN */}
+                <div className="space-y-1.5">
+                  <h4 className="font-bold uppercase tracking-wider text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                     Situation
                   </h4>
-                  <div className="text-sm leading-relaxed">
+                  <div className="text-sm leading-relaxed text-foreground/90">
                     {answer?.situation || <Skeleton className="h-4 w-full" />}
                   </div>
                 </div>
 
-                {/* Task */}
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-muted-foreground uppercase tracking-wider text-xs">
+                {/* Task - BLUE */}
+                <div className="space-y-1.5">
+                  <h4 className="font-bold uppercase tracking-wider text-xs text-blue-600 dark:text-blue-400 flex items-center gap-2">
                     Task
                   </h4>
-                  <div className="text-sm leading-relaxed">
+                  <div className="text-sm leading-relaxed text-foreground/90">
                     {answer?.task || <Skeleton className="h-4 w-full" />}
                   </div>
                 </div>
 
-                {/* Action */}
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-muted-foreground uppercase tracking-wider text-xs">
+                {/* Action - AMBER/YELLOW */}
+                <div className="space-y-1.5">
+                  <h4 className="font-bold uppercase tracking-wider text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2">
                     Action
                   </h4>
-                  <div className="text-sm leading-relaxed">
+                  <div className="text-sm leading-relaxed text-foreground/90">
                     {answer?.action || <Skeleton className="h-4 w-full" />}
                   </div>
                 </div>
 
-                {/* Result */}
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-muted-foreground uppercase tracking-wider text-xs">
+                {/* Result - RED/ROSE */}
+                <div className="space-y-1.5">
+                  <h4 className="font-bold uppercase tracking-wider text-xs text-rose-600 dark:text-rose-400 flex items-center gap-2">
                     Result
                   </h4>
-                  <div className="text-sm leading-relaxed font-medium text-foreground/90">
+                  <div className="text-sm leading-relaxed font-medium text-foreground">
                     {answer?.result || <Skeleton className="h-4 w-full" />}
                   </div>
                 </div>
@@ -140,15 +143,15 @@ export function AnswersList({ answers, isLoading }: AnswersListProps) {
           but it provides immediate feedback on the very first click.
         */}
         {isLoading && answers.length === 0 && (
-          <Card className="border-dashed opacity-60 animate-pulse">
-            <CardHeader className="bg-muted/5 pb-3">
+          <Card className="border-0 shadow-none opacity-60 animate-pulse">
+            <CardHeader className="pb-3 pl-0">
               <div className="flex items-center gap-2">
                 <Skeleton className="h-5 w-8" />
                 <Skeleton className="h-5 w-24" />
               </div>
               <Skeleton className="h-6 w-1/2 mt-2" />
             </CardHeader>
-            <CardContent className="pt-4 space-y-4">
+            <CardContent className="pt-2 pl-0 space-y-4">
               <div className="space-y-2">
                 <Skeleton className="h-3 w-20" />
                 <Skeleton className="h-4 w-full" />
