@@ -6,9 +6,14 @@ import { Section } from "@/components/ui/layout";
 import { Heading } from "@/components/ui/typography";
 import { AnswersList } from "@/components/answers/answers-list";
 import { STARAnswer } from "@/lib/zod-schemas";
-import { Sparkles } from "lucide-react";
-import { useState, useEffect, useCallback, useEffectEvent } from "react";
+import { Sparkles, FileText } from "lucide-react";
+import { useState, useCallback, useEffect, useEffectEvent } from "react";
 import { toast } from "sonner";
+import { DataTable } from "@/components/user-files/data-table";
+import { columns } from "@/components/user-files/columns";
+import { trpc } from "@/lib/trpc-client";
+import { authClient } from "@/lib/auth-client";
+import { RowSelectionState } from "@tanstack/react-table";
 
 const TARGET_TOTAL_ANSWERS = 25;
 
@@ -17,13 +22,39 @@ const AnswersInngestSSEPage = () => {
   const [eventId, setEventId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<STARAnswer[]>([]);
 
+  // File Selection State
+  const { data: session } = authClient.useSession();
+  const userId = session?.user.id;
+
+  // 1. Fetch Files
+  const filesQuery = trpc.files.getUserFiles.useQuery(
+    { userId: userId ?? "" },
+    { enabled: !!userId }
+  );
+
+  // 2. Selection State
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+
+  // 3. Helper to enforce Single Selection
+  const handleSelectionChange: React.Dispatch<React.SetStateAction<RowSelectionState>> = (updater) => {
+    const newSelection = typeof updater === 'function' ? updater(rowSelection) : updater;
+    const keys = Object.keys(newSelection);
+    
+    // Keep only the most recently selected item
+    if (keys.length > 1) {
+      const lastKey = keys[keys.length - 1];
+      setRowSelection({ [lastKey]: true });
+    } else {
+      setRowSelection(newSelection);
+    }
+  };
+
+  // Get the selected file ID (if any)
+  const selectedFileId = Object.keys(rowSelection)[0];
+
   // -------------------------------------------------------------------------
   // EFFECT EVENTS
   // -------------------------------------------------------------------------
-  // These functions always read the LATEST state values when called,
-  // but they don't cause the useEffect to re-run when those values change.
-  // This solves the "stale closure" problem without manual ref syncing.
-
   const handleInitial = useEffectEvent((data: { answers?: STARAnswer[] }) => {
     if (data.answers && data.answers.length > 0) {
       setAnswers(data.answers);
@@ -34,8 +65,7 @@ const AnswersInngestSSEPage = () => {
     (data: { answers?: STARAnswer[]; count: number }) => {
       setAnswers(data.answers || []);
 
-      // isGenerating here is ALWAYS the current value, not a stale closure
-      if (isGenerating && data.count > 0) {
+      if (isGenerating && data.count > 0 && data.count < TARGET_TOTAL_ANSWERS) {
         toast.loading(
           `Generating answers... (${data.count}/${TARGET_TOTAL_ANSWERS})`,
           { id: "generation-status" }
@@ -57,7 +87,6 @@ const AnswersInngestSSEPage = () => {
 
   const handleError = useEffectEvent((error: Event) => {
     console.error("[SSE] Connection error:", error);
-    // Could add UI feedback here - isGenerating would be current
     if (isGenerating) {
       toast.error("Connection lost. Attempting to reconnect...", {
         id: "sse-error",
@@ -73,8 +102,6 @@ const AnswersInngestSSEPage = () => {
 
     const eventSource = new EventSource("/api/answers-stream");
 
-    // All handlers use Effect Events - they see current state,
-    // but don't need to be in the dependency array
     eventSource.addEventListener("initial", (e) => {
       handleInitial(JSON.parse(e.data));
     });
@@ -95,15 +122,18 @@ const AnswersInngestSSEPage = () => {
       eventSource.close();
     };
   }, [isGenerating]);
-  // ^ Clean dependency array!
-  // Effect Events are intentionally NOT listed here.
-  // They're stable references that always read current values.
 
   // -------------------------------------------------------------------------
   // HANDLERS
   // -------------------------------------------------------------------------
   const startGeneration = useCallback(async () => {
     if (isGenerating) return;
+
+    // Validation: Ensure a file is selected
+    if (!selectedFileId) {
+      toast.error("Please select a resume file first");
+      return;
+    }
 
     toast.dismiss("generation-status");
     setIsGenerating(true);
@@ -120,7 +150,9 @@ const AnswersInngestSSEPage = () => {
       const res = await fetch("/api/generate-answers-inngest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ 
+          fileId: selectedFileId // Pass selected file ID
+        }),
       });
 
       if (!res.ok) throw new Error("Failed to start generation");
@@ -139,7 +171,7 @@ const AnswersInngestSSEPage = () => {
         id: "generation-status",
       });
     }
-  }, [isGenerating]);
+  }, [isGenerating, selectedFileId]);
 
   const count = answers.length;
 
@@ -156,15 +188,33 @@ const AnswersInngestSSEPage = () => {
           )}
         </div>
 
-        <Section>
-          <p>here is a new section</p>f
+        {/* File Selection Section */}
+        <Section className="space-y-4">
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="w-5 h-5 text-muted-foreground" />
+            <h3 className="font-medium">Select a Resume</h3>
+          </div>
+          
+          {filesQuery.isLoading ? (
+            <div className="h-32 bg-muted/10 animate-pulse rounded-md border border-border" />
+          ) : (
+            <div className="rounded-md border border-border">
+              <DataTable 
+                columns={columns} 
+                data={filesQuery.data || []} 
+                rowSelection={rowSelection}
+                setRowSelection={handleSelectionChange}
+              />
+            </div>
+          )}
         </Section>
 
+        {/* Controls */}
         <Section className="p-0">
           <div className="space-y-2">
             <Button
               onClick={startGeneration}
-              disabled={isGenerating}
+              disabled={isGenerating || !selectedFileId}
               size="lg"
               className="w-full md:w-auto"
             >
@@ -177,6 +227,11 @@ const AnswersInngestSSEPage = () => {
                 </>
               )}
             </Button>
+            {!selectedFileId && !isGenerating && (
+              <p className="text-sm text-red-500/80">
+                * Please select a file above to start
+              </p>
+            )}
             {eventId && (
               <p className="text-xs text-muted-foreground">
                 Job ID: {eventId} (Check Inngest dashboard for details)

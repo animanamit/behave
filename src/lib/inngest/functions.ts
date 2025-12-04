@@ -3,6 +3,8 @@ import { inngest } from "@/lib/inngest/inngest";
 import { generateObject } from "ai"; // Note: generateObject, NOT streamObject
 import { GenerateAnswersSchema } from "@/lib/zod-schemas";
 import { db } from "@/db/prisma";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { s3Client } from "@/lib/s3-client";
 
 /**
  * INNGEST FUNCTION: Generate Interview Answers
@@ -31,6 +33,16 @@ import { db } from "@/db/prisma";
  *   - etc.
  * - Works seamlessly with both polling (checks every 2s) and SSE (instant push)
  */
+
+// Helper to read stream to string
+const streamToString = (stream: any) =>
+  new Promise<string>((resolve, reject) => {
+    const chunks: any[] = [];
+    stream.on("data", (chunk: any) => chunks.push(chunk));
+    stream.on("error", reject);
+    stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+  });
+
 export const generateAnswers = inngest.createFunction(
   {
     id: "generate-answers",
@@ -45,7 +57,28 @@ export const generateAnswers = inngest.createFunction(
     // -------------------------------------------------------------------------
     // The event contains: { userId, resumeText }
     // This comes from the API route that triggers the job.
-    const { userId, resumeText } = event.data;
+    const { userId, resumeText, s3Key } = event.data;
+
+    // STEP 0.5: Fetch Resume Text if needed
+    let finalResumeText = resumeText;
+
+    if (!finalResumeText && s3Key) {
+      await step.run("fetch-resume-from-s3", async () => {
+        console.log(`[Inngest] Fetching resume from S3: ${s3Key}`);
+        try {
+          const command = new GetObjectCommand({
+            Bucket: process.env.AWS_S3_BUCKET!,
+            Key: s3Key,
+          });
+          const response = await s3Client.send(command);
+          // @ts-ignore - Body is a stream in Node.js
+          finalResumeText = await streamToString(response.Body);
+        } catch (err) {
+          console.error("Failed to fetch from S3", err);
+          throw new Error("Failed to read resume file");
+        }
+      });
+    }
 
     // -------------------------------------------------------------------------
     // STEP 1: Server-Side Cleanup (Idempotency Guarantee)
@@ -94,7 +127,7 @@ export const generateAnswers = inngest.createFunction(
           const promptText =
             "You are an expert career coach specializing in behavioral interviews. Analyze the following career document and generate behavioral interview answers in STAR format (Situation, Task, Action, Result).\n\n" +
             "Career Document:\n" +
-            (resumeText ||
+            (finalResumeText ||
               "Animan Amit5 Siglap Road, Singapore • +65 97552111 • 747animan@gmail.com • Linkedin • Github • Portfolio\n\n" +
                 "PROFESSIONAL SUMMARY\n" +
                 "Results-driven Frontend Web Developer with over 4 years of experience in designing and building advanced web applications using React, TypeScript, and modern JavaScript (ES6+). Proven track record in enhancing user engagement and optimizing performance through agile methodologies, collaboration with cross-functional teams, and a strong focus on user experience (UX) principles.\n\n" +

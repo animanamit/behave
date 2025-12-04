@@ -5,6 +5,7 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  RowSelectionState,
 } from "@tanstack/react-table";
 
 import {
@@ -16,19 +17,32 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { Checkbox } from "@/components/ui/checkbox";
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  // Add these new props to control selection from outside
+  rowSelection?: RowSelectionState;
+  setRowSelection?: React.Dispatch<React.SetStateAction<RowSelectionState>>;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  rowSelection,    // <--- receive from parent
+  setRowSelection, // <--- receive from parent
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    // Add these configuration options:
+    onRowSelectionChange: setRowSelection,
+    state: {
+      rowSelection: rowSelection ?? {},
+    },
+    getRowId: (row: any) => row.id, // Critical: tells the table to use the DB 'id' for selection keys
   });
 
   return (

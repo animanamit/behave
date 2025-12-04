@@ -6,6 +6,8 @@ import { UserFilesSchema, SaveFileSchema, PresignedURLRequestSchema } from "@/li
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "@/lib/s3-client";
+import { inngest } from "@/lib/inngest/inngest";
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 export const filesRouter = createTRPCRouter({
   getUserFiles: protectedProcedure
@@ -103,5 +105,37 @@ export const filesRouter = createTRPCRouter({
           message: "Failed to save file metadata to database. Please try again.",
         });
       }
+    }),
+
+  deleteFile: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // 1. Fetch file first to get the S3 key
+      const file = await db.file.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!file) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "File not found" });
+      }
+
+      if (file.userId !== ctx.userId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Unauthorized" });
+      }
+
+      // 2. Delete from DB immediately (Fast UI response)
+      await db.file.delete({
+        where: { id: input.id },
+      });
+
+      // 3. Trigger background job to clean up S3
+      await inngest.send({
+        name: "file/delete",
+        data: {
+          s3Key: file.s3Key,
+        },
+      });
+
+      return { success: true };
     }),
 });

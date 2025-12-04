@@ -38,11 +38,7 @@ const UploadCareerDoc = () => {
     },
   });
 
-  const presignedUrlMutation = trpc.files.getPresignedUrl.useMutation({
-    onError: (error) => {
-      toast.error(error.message || "Failed to generate upload URL");
-    },
-  });
+  const presignedUrlMutation = trpc.files.getPresignedUrl.useMutation();
 
   const saveFileMutation = trpc.files.saveFile.useMutation({
     onSuccess: () => {
@@ -52,9 +48,6 @@ const UploadCareerDoc = () => {
           queryKey: ["trpc", "files", "getUserFiles"],
         });
       }
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to save file metadata");
     },
   });
 
@@ -85,8 +78,7 @@ const UploadCareerDoc = () => {
 
       if (!uploadResponse.ok) {
         const error = await uploadResponse.json();
-        toast.error(error.error);
-        return;
+        throw new Error(error.error || "Failed to upload to storage");
       }
 
       await saveFileMutation.mutateAsync({
@@ -105,7 +97,7 @@ const UploadCareerDoc = () => {
       } else if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Unknown error");
+        toast.error("An unexpected error occurred");
       }
     }
   };

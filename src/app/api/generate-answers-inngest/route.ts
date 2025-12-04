@@ -2,6 +2,7 @@
 import { inngest } from "@/lib/inngest/inngest";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { db } from "@/db/prisma";
 
 /**
  * TRIGGER ENDPOINT (Inngest Version)
@@ -22,7 +23,21 @@ export async function POST(req: Request) {
     }
 
     // 2. Parse request body (optional - for custom resume text)
-    const { resumeText } = await req.json().catch(() => ({}));
+    const { resumeText, fileId } = await req.json().catch(() => ({}));
+
+    let finalResumeText = resumeText;
+    let s3KeyForJob = undefined;
+
+    // If a file was selected, get its S3 key
+    if (fileId) {
+      const file = await db.file.findUnique({
+        where: { id: fileId },
+        select: { s3Key: true }
+      });
+      if (file) {
+        s3KeyForJob = file.s3Key;
+      }
+    }
 
     // 3. Send event to Inngest
     // This is like sending a message: "Hey Inngest, please generate answers for this user"
@@ -30,7 +45,8 @@ export async function POST(req: Request) {
       name: "answers/generate", // This matches the event name in functions.ts
       data: {
         userId: session.user.id,
-        resumeText: resumeText || undefined, // Optional custom resume
+        resumeText: finalResumeText, // might be undefined
+        s3Key: s3KeyForJob,          // new field!
       },
     });
 
