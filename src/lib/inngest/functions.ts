@@ -160,9 +160,13 @@ export const generateAnswers = inngest.createFunction(
             "2. For each experience, create a behavioral interview answer that follows the STAR format\n" +
             "3. Cover a wide range of behavioral competencies: leadership, teamwork, problem-solving, conflict resolution, communication, adaptability, time management, decision-making, innovation, and customer focus\n" +
             "4. Make each answer specific, quantifiable, and impactful\n" +
-            "5. IMPORTANT: Provide VERY DETAILED and IN-DEPTH answers. Each answer should be approximately 300-400 words. Elaborate significantly on the 'Action' and 'Result' sections.\n" +
-            "6. Format each answer clearly with labeled sections: SITUATION, TASK, ACTION, RESULT\n" +
-            `7. GENERATE ONLY ${
+            "5. Ensure that all scenarios and examples chosen demonstrate clear BUSINESS VALUE and IMPACT. Focus on outcomes that matter to the business, such as revenue growth, cost reduction, efficiency improvements, customer satisfaction, or strategic alignment. Avoid purely technical descriptions without business context.\n" +
+            "6. Highlight REPEATABLE actions and frameworks. Show that your success is due to systematic approaches (e.g., 'I established a process for...', 'I applied a framework to...') that are transferable across different business functions and companies, rather than just one-off fixes.\n" +
+            "7. Emphasize EMPATHY and UNDERSTANDING first. Before jumping to solutions, explicitly mention how you sought to understand the user's or stakeholder's pain points and perspective. Describe how this empathy informed your problem-solving approach.\n" +
+            "8. Include a REFLECTION or LEARNING section within the Result or as a concluding thought. Briefly mention what you learned from the experience and how you would apply it to future challenges.\n" +
+            "9. IMPORTANT: Provide VERY DETAILED and IN-DEPTH answers. Each answer should be approximately 300-400 words. Elaborate significantly on the 'Action' and 'Result' sections.\n" +
+            "10. Format each answer clearly with labeled sections: SITUATION, TASK, ACTION, RESULT\n" +
+            `11. GENERATE ONLY ${
               endId - startId + 1
             } ANSWERS. START NUMBERING FROM ID #${startId}. So if startId is ${startId}, the first answer should be ID ${startId}, the second ${
               startId + 1
@@ -213,36 +217,33 @@ export const generateAnswers = inngest.createFunction(
         const answer = batchResult.answers[i];
         const answerNumber = allAnswers.length + i + 1; // 1-indexed position
 
-        await step.run(
-          `save-answer-batch${batchNumber}-${i + 1}`,
-          async () => {
-            const answerToInsert = {
-              userId: userId,
-              competency: answer.competency,
-              question: answer.question,
-              situation: answer.situation,
-              task: answer.task,
-              action: answer.action,
-              result: answer.result,
-              // Handle optional fullAnswer
-              fullAnswer:
-                answer.fullAnswer ||
-                `${answer.situation}\n\n${answer.task}\n\n${answer.action}\n\n${answer.result}`,
-            };
+        await step.run(`save-answer-batch${batchNumber}-${i + 1}`, async () => {
+          const answerToInsert = {
+            userId: userId,
+            competency: answer.competency,
+            question: answer.question,
+            situation: answer.situation,
+            task: answer.task,
+            action: answer.action,
+            result: answer.result,
+            // Handle optional fullAnswer
+            fullAnswer:
+              answer.fullAnswer ||
+              `${answer.situation}\n\n${answer.task}\n\n${answer.action}\n\n${answer.result}`,
+          };
 
-            // Save ONE answer at a time
-            await db.starAnswer.create({
-              data: answerToInsert,
-            });
+          // Save ONE answer at a time
+          await db.starAnswer.create({
+            data: answerToInsert,
+          });
 
-            console.log(
-              `[Inngest] ✓ Saved answer ${answerNumber}/25 (${answer.competency})`
-            );
-            }
-            );
+          console.log(
+            `[Inngest] ✓ Saved answer ${answerNumber}/25 (${answer.competency})`
+          );
+        });
 
-            // NO ARTIFICIAL DELAYS - Frontend polls frequently (500ms) to catch each save
-            // This is more honest: answers appear as fast as they're generated
+        // NO ARTIFICIAL DELAYS - Frontend polls frequently (500ms) to catch each save
+        // This is more honest: answers appear as fast as they're generated
       }
     }
 

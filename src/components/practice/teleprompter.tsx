@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { STARAnswer } from "@/lib/zod-schemas";
 import { Button } from "@/components/ui/button";
 import { Heading, Text } from "@/components/ui/typography";
@@ -17,6 +17,7 @@ const SECTIONS = ["Question", "Situation", "Task", "Action", "Result"] as const;
 
 export function Teleprompter({ answer, className }: TeleprompterProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Map sections to their content
   const sectionContent = [
@@ -66,6 +67,17 @@ export function Teleprompter({ answer, className }: TeleprompterProps) {
   const handleReset = useCallback(() => {
     setCurrentIndex(0);
   }, []);
+
+  // Auto-scroll to top when section changes
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: 0,
+        // behavior: "smooth",
+        behavior: "instant",
+      });
+    }
+  }, [currentIndex]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -135,7 +147,10 @@ export function Teleprompter({ answer, className }: TeleprompterProps) {
       </div>
 
       {/* Main Content Area - Scrollable if text is very long, but trying to fit it */}
-      <div className="flex-1 p-4 flex flex-col justify-center overflow-y-auto relative group scrollbar-thin">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 p-4 flex flex-col overflow-y-auto relative group scrollbar-thin"
+      >
         {/* Hint Overlay */}
         <div className="absolute top-2 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded border border-border pointer-events-none">
           Press <span className="font-mono font-bold">Space</span> to advance
@@ -146,10 +161,21 @@ export function Teleprompter({ answer, className }: TeleprompterProps) {
             {currentSection.description}
           </Text>
 
-          <div className="prose dark:prose-invert leading-relaxed">
-            <p className="text-md font-semibold tracking-tight">
-              {currentSection.content}
-            </p>
+          <div className="prose dark:prose-invert max-w-none">
+            <div className="space-y-4">
+              {currentSection.content
+                // Safer splitting: Look for punctuation, space, then UPPERCASE letter.
+                // This avoids splitting on "e.g. example" or "Next.js component"
+                .split(/(?<=[.!?])\s+(?=[A-Z])/)
+                .map((sentence, i) => (
+                  <p
+                    key={i}
+                    className="text-sm font-medium leading-relaxed text-foreground/90"
+                  >
+                    {sentence.trim()}
+                  </p>
+                ))}
+            </div>
           </div>
         </div>
       </div>
