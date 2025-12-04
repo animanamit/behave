@@ -71,8 +71,8 @@ export const UploadCareerDocSchema = z.object({
  */
 export const STARAnswerSchema = z.object({
   id: z
-    .number()
-    .describe("Unique identifier for the answer, sequential (1, 2, 3...)"),
+    .union([z.string(), z.number()])
+    .describe("Unique identifier for the answer, sequential (1, 2, 3...) or UUID"),
   competency: z
     .string()
     .describe(

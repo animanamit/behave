@@ -13,9 +13,7 @@ export function HomeLayout({ children }: HomeLayoutProps) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <main className="flex-1 p-6 md:p-8 lg:p-12 overflow-auto">
-          {children}
-        </main>
+        <main className="flex-1 p-6 overflow-auto">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

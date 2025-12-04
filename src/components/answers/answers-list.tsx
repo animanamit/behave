@@ -15,9 +15,16 @@ import { STARAnswer } from "@/lib/zod-schemas";
 interface AnswersListProps {
   answers: STARAnswer[]; // The merged list of all answers (streaming + completed)
   isLoading: boolean; // Whether the "Daisy Chain" process is still active
+  onSelectAnswer?: (answer: STARAnswer) => void;
+  showContent?: boolean; // Whether to show the full STAR content or just the question
 }
 
-export function AnswersList({ answers, isLoading }: AnswersListProps) {
+export function AnswersList({
+  answers,
+  isLoading,
+  onSelectAnswer,
+  showContent = true,
+}: AnswersListProps) {
   return (
     <div className="space-y-8">
       {/* 
@@ -39,6 +46,7 @@ export function AnswersList({ answers, isLoading }: AnswersListProps) {
           return (
             <Card
               key={idx}
+              onClick={() => onSelectAnswer?.(answer)}
               className={cn(
                 // Animation: Smooth fade in and slide up when a new card appears
                 "animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out overflow-hidden transition-all",
@@ -47,7 +55,9 @@ export function AnswersList({ answers, isLoading }: AnswersListProps) {
                 // If static: Borderless with subtle background hover
                 isActive
                   ? "border-primary/50 shadow-lg ring-1 ring-primary/20 bg-primary/5"
-                  : "border-0 shadow-none bg-transparent hover:bg-muted/20"
+                  : "border-0 shadow-none bg-transparent hover:bg-muted/20",
+                onSelectAnswer &&
+                  "cursor-pointer hover:border-primary/50 hover:bg-muted/30"
               )}
             >
               <CardHeader className="pb-3 pl-0">
@@ -83,54 +93,64 @@ export function AnswersList({ answers, isLoading }: AnswersListProps) {
                 </CardTitle>
               </CardHeader>
 
-              <CardContent className="pt-2 pl-0 space-y-6">
-                {/* 
-                  STAR SECTIONS
-                  Each section (Situation, Task, Action, Result) follows the same pattern:
-                  - Small uppercase label
-                  - Content div (uses div instead of p to allow Skeletons inside without hydration errors)
-                  - Skeleton fallback if content is missing
-                */}
+              <CardContent
+                className={cn("pt-2 pl-0", showContent ? "space-y-6" : "pb-0")}
+              >
+                {showContent ? (
+                  <>
+                    {/* 
+                      STAR SECTIONS
+                      Each section (Situation, Task, Action, Result) follows the same pattern:
+                      - Small uppercase label
+                      - Content div (uses div instead of p to allow Skeletons inside without hydration errors)
+                      - Skeleton fallback if content is missing
+                    */}
 
-                {/* Situation - GREEN */}
-                <div className="space-y-1.5">
-                  <h4 className="font-bold uppercase tracking-wider text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-                    Situation
-                  </h4>
-                  <div className="text-sm leading-relaxed text-foreground/90">
-                    {answer?.situation || <Skeleton className="h-4 w-full" />}
-                  </div>
-                </div>
+                    {/* Situation - GREEN */}
+                    <div className="space-y-1.5">
+                      <h4 className="font-bold uppercase tracking-wider text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                        Situation
+                      </h4>
+                      <div className="text-sm leading-relaxed text-foreground/90">
+                        {answer?.situation || (
+                          <Skeleton className="h-4 w-full" />
+                        )}
+                      </div>
+                    </div>
 
-                {/* Task - BLUE */}
-                <div className="space-y-1.5">
-                  <h4 className="font-bold uppercase tracking-wider text-xs text-blue-600 dark:text-blue-400 flex items-center gap-2">
-                    Task
-                  </h4>
-                  <div className="text-sm leading-relaxed text-foreground/90">
-                    {answer?.task || <Skeleton className="h-4 w-full" />}
-                  </div>
-                </div>
+                    {/* Task - BLUE */}
+                    <div className="space-y-1.5">
+                      <h4 className="font-bold uppercase tracking-wider text-xs text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                        Task
+                      </h4>
+                      <div className="text-sm leading-relaxed text-foreground/90">
+                        {answer?.task || <Skeleton className="h-4 w-full" />}
+                      </div>
+                    </div>
 
-                {/* Action - AMBER/YELLOW */}
-                <div className="space-y-1.5">
-                  <h4 className="font-bold uppercase tracking-wider text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2">
-                    Action
-                  </h4>
-                  <div className="text-sm leading-relaxed text-foreground/90">
-                    {answer?.action || <Skeleton className="h-4 w-full" />}
-                  </div>
-                </div>
+                    {/* Action - AMBER/YELLOW */}
+                    <div className="space-y-1.5">
+                      <h4 className="font-bold uppercase tracking-wider text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                        Action
+                      </h4>
+                      <div className="text-sm leading-relaxed text-foreground/90">
+                        {answer?.action || <Skeleton className="h-4 w-full" />}
+                      </div>
+                    </div>
 
-                {/* Result - RED/ROSE */}
-                <div className="space-y-1.5">
-                  <h4 className="font-bold uppercase tracking-wider text-xs text-rose-600 dark:text-rose-400 flex items-center gap-2">
-                    Result
-                  </h4>
-                  <div className="text-sm leading-relaxed font-medium text-foreground">
-                    {answer?.result || <Skeleton className="h-4 w-full" />}
-                  </div>
-                </div>
+                    {/* Result - RED/ROSE */}
+                    <div className="space-y-1.5">
+                      <h4 className="font-bold uppercase tracking-wider text-xs text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                        Result
+                      </h4>
+                      <div className="text-sm leading-relaxed font-medium text-foreground">
+                        {answer?.result || <Skeleton className="h-4 w-full" />}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="hidden" />
+                )}
               </CardContent>
             </Card>
           );

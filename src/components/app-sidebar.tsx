@@ -38,11 +38,11 @@ const items = [
   //   url: "/upload",
   //   icon: Upload,
   // },
-  // {
-  //   title: "Practice Session",
-  //   url: "/practice",
-  //   icon: Mic,
-  // },
+  {
+    title: "Practice Session",
+    url: "/practice",
+    icon: Mic,
+  },
   // {
   //   title: "Past Sessions",
   //   url: "/review",
