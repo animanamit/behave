@@ -65,9 +65,9 @@ export const transcribeVideo = inngest.createFunction(
         return await streamToBuffer(response.Body);
       });
 
-      const file = new File([buffer], "recording.webm", {
+      const file = new File([buffer as any], "recording.webm", {
         type: "video/webm",
-      });
+      }) as File;
 
       console.log('[transcribe-video] Starting transcription...');
       const transcription = await openai.audio.transcriptions.create({
@@ -78,7 +78,7 @@ export const transcribeVideo = inngest.createFunction(
       console.log('[transcribe-video] Transcription complete, text length:', transcription.text?.length);
       const transcriptText = transcription.text || "";
 
-      const duration = Math.ceil(buffer.length / 1024 / 100);
+      const duration = Math.ceil((buffer as any).length / 1024 / 100);
 
       await step.run("save-transcript", async () => {
         console.log('[transcribe-video] Saving transcript to DB...');
@@ -111,13 +111,13 @@ export const transcribeVideo = inngest.createFunction(
 export const analyzeRecording = inngest.createFunction(
   { id: "analyze-recording" },
   { event: "video/transcribed" },
-  async ({ step }) => {
+  async ({ step, event }) => {
     console.log('[analyze-recording] Received event');
 
     try {
       const resultData = await step.run("fetch-data", async () => {
         const session = await db.practiceSession.findUnique({
-          where: { id: step.event.data.sessionId },
+          where: { id: event.data.sessionId },
           include: { answer: true },
         });
         if (!session || !session.transcript) {
@@ -130,7 +130,7 @@ export const analyzeRecording = inngest.createFunction(
 
       const wordCounts = await step.run("count-words", async () => {
         const scriptWords = resultData.answer.fullAnswer.split(/\s+/).length;
-        const transcriptWords = resultData.transcript.split(/\s+/).length;
+        const transcriptWords = resultData.transcript ? resultData.transcript.split(/\s+/).length : 0;
         console.log('[analyze-recording] Word counts - Script:', scriptWords, 'Transcript:', transcriptWords);
         return { scriptWords, transcriptWords };
       });
@@ -162,7 +162,7 @@ COMPETENCY:
 ${resultData.answer.competency}
 
 Instructions:
-1. Score content fidelity (0-100) based on how well they covered the script
+1. Score content fidelity (0-100) based on how well they covered script
 2. Assess pacing: "${wordCounts.transcriptWords} words" over ~${resultData.duration || 2} minutes
 3. Rate confidence: "Low" (hesitant, fillers), "Medium", "High" (clear, assertive)
 4. Did they go off-script? (compare if they added content not in script)
@@ -178,7 +178,7 @@ Keep feedback concise and actionable.`,
 
       const wordsMatched = await step.run("count-matched-words", async () => {
         const scriptWords = resultData.answer.fullAnswer.toLowerCase().split(/\s+/);
-        const transcriptWords = resultData.transcript.toLowerCase().split(/\s+/);
+        const transcriptWords = resultData.transcript ? resultData.transcript.toLowerCase().split(/\s+/) : [];
         const transcriptSet = new Set(transcriptWords);
         const matched = scriptWords.filter((w) => transcriptSet.has(w)).length;
         console.log('[analyze-recording] Words matched:', matched, 'of', scriptWords);
@@ -189,7 +189,7 @@ Keep feedback concise and actionable.`,
         console.log('[analyze-recording] Creating feedback in DB...');
         await db.sessionFeedback.create({
           data: {
-            sessionId: step.event.data.sessionId,
+            sessionId: event.data.sessionId,
             contentFidelityScore: analysis.contentFidelityScore,
             pacing: analysis.pacing,
             confidence: analysis.confidence,
@@ -205,7 +205,7 @@ Keep feedback concise and actionable.`,
       await step.run("mark-completed", async () => {
         console.log('[analyze-recording] Marking session as completed');
         await db.practiceSession.update({
-          where: { id: step.event.data.sessionId },
+          where: { id: event.data.sessionId },
           data: { analysisStatus: "completed" },
         });
       });

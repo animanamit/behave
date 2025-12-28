@@ -64,8 +64,10 @@ const UploadCareerDoc = () => {
 
       const fileName = user ? `${user}-${baseFileName}` : baseFileName;
       const contentType = (document.type as any) || "application/pdf";
+      const s3Key = `user-files/${userId}/${fileName}`;
 
-      const { uploadURL, s3Key } = await presignedUrlMutation.mutateAsync({
+      const { uploadURL } = await presignedUrlMutation.mutateAsync({
+        s3Key,
         fileName,
         contentType,
       });

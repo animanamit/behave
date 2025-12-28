@@ -46,11 +46,48 @@ export const filesRouter = createTRPCRouter({
     .input(
       z.object({
         s3Key: z.string().min(1),
+        fileName: z.string().optional(),
+        contentType: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const url = await getPresignedUrl(input.s3Key);
-      return { url };
+      return { url: url, uploadURL: url, s3Key: input.s3Key };
+    }),
+
+  saveFile: protectedProcedure
+    .input(
+      z.object({
+        s3Key: z.string(),
+        fileName: z.string(),
+        fileSize: z.number(),
+        contentType: z.string(),
+        userId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.userId !== ctx.userId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Unauthorized" });
+      }
+
+      try {
+        const file = await db.file.create({
+          data: {
+            userId: input.userId,
+            s3Key: input.s3Key,
+            fileName: input.fileName,
+            fileSize: input.fileSize,
+            contentType: input.contentType,
+          },
+        });
+
+        return file;
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to save file",
+        });
+      }
     }),
 
   deleteFile: protectedProcedure
