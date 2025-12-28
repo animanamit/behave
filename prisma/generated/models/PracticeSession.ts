@@ -43,6 +43,7 @@ export type PracticeSessionMinAggregateOutputType = {
   thumbnailUrl: string | null
   transcript: string | null
   duration: number | null
+  analysisStatus: string | null
   recordedAt: Date | null
 }
 
@@ -55,6 +56,7 @@ export type PracticeSessionMaxAggregateOutputType = {
   thumbnailUrl: string | null
   transcript: string | null
   duration: number | null
+  analysisStatus: string | null
   recordedAt: Date | null
 }
 
@@ -67,6 +69,7 @@ export type PracticeSessionCountAggregateOutputType = {
   thumbnailUrl: number
   transcript: number
   duration: number
+  analysisStatus: number
   recordedAt: number
   _all: number
 }
@@ -89,6 +92,7 @@ export type PracticeSessionMinAggregateInputType = {
   thumbnailUrl?: true
   transcript?: true
   duration?: true
+  analysisStatus?: true
   recordedAt?: true
 }
 
@@ -101,6 +105,7 @@ export type PracticeSessionMaxAggregateInputType = {
   thumbnailUrl?: true
   transcript?: true
   duration?: true
+  analysisStatus?: true
   recordedAt?: true
 }
 
@@ -113,6 +118,7 @@ export type PracticeSessionCountAggregateInputType = {
   thumbnailUrl?: true
   transcript?: true
   duration?: true
+  analysisStatus?: true
   recordedAt?: true
   _all?: true
 }
@@ -212,6 +218,7 @@ export type PracticeSessionGroupByOutputType = {
   thumbnailUrl: string | null
   transcript: string | null
   duration: number | null
+  analysisStatus: string
   recordedAt: Date
   _count: PracticeSessionCountAggregateOutputType | null
   _avg: PracticeSessionAvgAggregateOutputType | null
@@ -247,6 +254,7 @@ export type PracticeSessionWhereInput = {
   thumbnailUrl?: Prisma.StringNullableFilter<"PracticeSession"> | string | null
   transcript?: Prisma.StringNullableFilter<"PracticeSession"> | string | null
   duration?: Prisma.IntNullableFilter<"PracticeSession"> | number | null
+  analysisStatus?: Prisma.StringFilter<"PracticeSession"> | string
   recordedAt?: Prisma.DateTimeFilter<"PracticeSession"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   answer?: Prisma.XOR<Prisma.StarAnswerScalarRelationFilter, Prisma.StarAnswerWhereInput>
@@ -262,6 +270,7 @@ export type PracticeSessionOrderByWithRelationInput = {
   thumbnailUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   transcript?: Prisma.SortOrderInput | Prisma.SortOrder
   duration?: Prisma.SortOrderInput | Prisma.SortOrder
+  analysisStatus?: Prisma.SortOrder
   recordedAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
   answer?: Prisma.StarAnswerOrderByWithRelationInput
@@ -280,6 +289,7 @@ export type PracticeSessionWhereUniqueInput = Prisma.AtLeast<{
   thumbnailUrl?: Prisma.StringNullableFilter<"PracticeSession"> | string | null
   transcript?: Prisma.StringNullableFilter<"PracticeSession"> | string | null
   duration?: Prisma.IntNullableFilter<"PracticeSession"> | number | null
+  analysisStatus?: Prisma.StringFilter<"PracticeSession"> | string
   recordedAt?: Prisma.DateTimeFilter<"PracticeSession"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   answer?: Prisma.XOR<Prisma.StarAnswerScalarRelationFilter, Prisma.StarAnswerWhereInput>
@@ -295,6 +305,7 @@ export type PracticeSessionOrderByWithAggregationInput = {
   thumbnailUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   transcript?: Prisma.SortOrderInput | Prisma.SortOrder
   duration?: Prisma.SortOrderInput | Prisma.SortOrder
+  analysisStatus?: Prisma.SortOrder
   recordedAt?: Prisma.SortOrder
   _count?: Prisma.PracticeSessionCountOrderByAggregateInput
   _avg?: Prisma.PracticeSessionAvgOrderByAggregateInput
@@ -315,6 +326,7 @@ export type PracticeSessionScalarWhereWithAggregatesInput = {
   thumbnailUrl?: Prisma.StringNullableWithAggregatesFilter<"PracticeSession"> | string | null
   transcript?: Prisma.StringNullableWithAggregatesFilter<"PracticeSession"> | string | null
   duration?: Prisma.IntNullableWithAggregatesFilter<"PracticeSession"> | number | null
+  analysisStatus?: Prisma.StringWithAggregatesFilter<"PracticeSession"> | string
   recordedAt?: Prisma.DateTimeWithAggregatesFilter<"PracticeSession"> | Date | string
 }
 
@@ -325,6 +337,7 @@ export type PracticeSessionCreateInput = {
   thumbnailUrl?: string | null
   transcript?: string | null
   duration?: number | null
+  analysisStatus?: string
   recordedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutPracticeSessionsInput
   answer: Prisma.StarAnswerCreateNestedOneWithoutPracticeSessionsInput
@@ -340,6 +353,7 @@ export type PracticeSessionUncheckedCreateInput = {
   thumbnailUrl?: string | null
   transcript?: string | null
   duration?: number | null
+  analysisStatus?: string
   recordedAt?: Date | string
   sessionFeedback?: Prisma.SessionFeedbackUncheckedCreateNestedManyWithoutSessionInput
 }
@@ -351,6 +365,7 @@ export type PracticeSessionUpdateInput = {
   thumbnailUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transcript?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  analysisStatus?: Prisma.StringFieldUpdateOperationsInput | string
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutPracticeSessionsNestedInput
   answer?: Prisma.StarAnswerUpdateOneRequiredWithoutPracticeSessionsNestedInput
@@ -366,6 +381,7 @@ export type PracticeSessionUncheckedUpdateInput = {
   thumbnailUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transcript?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  analysisStatus?: Prisma.StringFieldUpdateOperationsInput | string
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessionFeedback?: Prisma.SessionFeedbackUncheckedUpdateManyWithoutSessionNestedInput
 }
@@ -379,6 +395,7 @@ export type PracticeSessionCreateManyInput = {
   thumbnailUrl?: string | null
   transcript?: string | null
   duration?: number | null
+  analysisStatus?: string
   recordedAt?: Date | string
 }
 
@@ -389,6 +406,7 @@ export type PracticeSessionUpdateManyMutationInput = {
   thumbnailUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transcript?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  analysisStatus?: Prisma.StringFieldUpdateOperationsInput | string
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -401,6 +419,7 @@ export type PracticeSessionUncheckedUpdateManyInput = {
   thumbnailUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transcript?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  analysisStatus?: Prisma.StringFieldUpdateOperationsInput | string
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -423,6 +442,7 @@ export type PracticeSessionCountOrderByAggregateInput = {
   thumbnailUrl?: Prisma.SortOrder
   transcript?: Prisma.SortOrder
   duration?: Prisma.SortOrder
+  analysisStatus?: Prisma.SortOrder
   recordedAt?: Prisma.SortOrder
 }
 
@@ -439,6 +459,7 @@ export type PracticeSessionMaxOrderByAggregateInput = {
   thumbnailUrl?: Prisma.SortOrder
   transcript?: Prisma.SortOrder
   duration?: Prisma.SortOrder
+  analysisStatus?: Prisma.SortOrder
   recordedAt?: Prisma.SortOrder
 }
 
@@ -451,6 +472,7 @@ export type PracticeSessionMinOrderByAggregateInput = {
   thumbnailUrl?: Prisma.SortOrder
   transcript?: Prisma.SortOrder
   duration?: Prisma.SortOrder
+  analysisStatus?: Prisma.SortOrder
   recordedAt?: Prisma.SortOrder
 }
 
@@ -576,6 +598,7 @@ export type PracticeSessionCreateWithoutUserInput = {
   thumbnailUrl?: string | null
   transcript?: string | null
   duration?: number | null
+  analysisStatus?: string
   recordedAt?: Date | string
   answer: Prisma.StarAnswerCreateNestedOneWithoutPracticeSessionsInput
   sessionFeedback?: Prisma.SessionFeedbackCreateNestedManyWithoutSessionInput
@@ -589,6 +612,7 @@ export type PracticeSessionUncheckedCreateWithoutUserInput = {
   thumbnailUrl?: string | null
   transcript?: string | null
   duration?: number | null
+  analysisStatus?: string
   recordedAt?: Date | string
   sessionFeedback?: Prisma.SessionFeedbackUncheckedCreateNestedManyWithoutSessionInput
 }
@@ -631,6 +655,7 @@ export type PracticeSessionScalarWhereInput = {
   thumbnailUrl?: Prisma.StringNullableFilter<"PracticeSession"> | string | null
   transcript?: Prisma.StringNullableFilter<"PracticeSession"> | string | null
   duration?: Prisma.IntNullableFilter<"PracticeSession"> | number | null
+  analysisStatus?: Prisma.StringFilter<"PracticeSession"> | string
   recordedAt?: Prisma.DateTimeFilter<"PracticeSession"> | Date | string
 }
 
@@ -641,6 +666,7 @@ export type PracticeSessionCreateWithoutAnswerInput = {
   thumbnailUrl?: string | null
   transcript?: string | null
   duration?: number | null
+  analysisStatus?: string
   recordedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutPracticeSessionsInput
   sessionFeedback?: Prisma.SessionFeedbackCreateNestedManyWithoutSessionInput
@@ -654,6 +680,7 @@ export type PracticeSessionUncheckedCreateWithoutAnswerInput = {
   thumbnailUrl?: string | null
   transcript?: string | null
   duration?: number | null
+  analysisStatus?: string
   recordedAt?: Date | string
   sessionFeedback?: Prisma.SessionFeedbackUncheckedCreateNestedManyWithoutSessionInput
 }
@@ -691,6 +718,7 @@ export type PracticeSessionCreateWithoutSessionFeedbackInput = {
   thumbnailUrl?: string | null
   transcript?: string | null
   duration?: number | null
+  analysisStatus?: string
   recordedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutPracticeSessionsInput
   answer: Prisma.StarAnswerCreateNestedOneWithoutPracticeSessionsInput
@@ -705,6 +733,7 @@ export type PracticeSessionUncheckedCreateWithoutSessionFeedbackInput = {
   thumbnailUrl?: string | null
   transcript?: string | null
   duration?: number | null
+  analysisStatus?: string
   recordedAt?: Date | string
 }
 
@@ -731,6 +760,7 @@ export type PracticeSessionUpdateWithoutSessionFeedbackInput = {
   thumbnailUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transcript?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  analysisStatus?: Prisma.StringFieldUpdateOperationsInput | string
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutPracticeSessionsNestedInput
   answer?: Prisma.StarAnswerUpdateOneRequiredWithoutPracticeSessionsNestedInput
@@ -745,6 +775,7 @@ export type PracticeSessionUncheckedUpdateWithoutSessionFeedbackInput = {
   thumbnailUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transcript?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  analysisStatus?: Prisma.StringFieldUpdateOperationsInput | string
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -756,6 +787,7 @@ export type PracticeSessionCreateManyUserInput = {
   thumbnailUrl?: string | null
   transcript?: string | null
   duration?: number | null
+  analysisStatus?: string
   recordedAt?: Date | string
 }
 
@@ -766,6 +798,7 @@ export type PracticeSessionUpdateWithoutUserInput = {
   thumbnailUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transcript?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  analysisStatus?: Prisma.StringFieldUpdateOperationsInput | string
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   answer?: Prisma.StarAnswerUpdateOneRequiredWithoutPracticeSessionsNestedInput
   sessionFeedback?: Prisma.SessionFeedbackUpdateManyWithoutSessionNestedInput
@@ -779,6 +812,7 @@ export type PracticeSessionUncheckedUpdateWithoutUserInput = {
   thumbnailUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transcript?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  analysisStatus?: Prisma.StringFieldUpdateOperationsInput | string
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessionFeedback?: Prisma.SessionFeedbackUncheckedUpdateManyWithoutSessionNestedInput
 }
@@ -791,6 +825,7 @@ export type PracticeSessionUncheckedUpdateManyWithoutUserInput = {
   thumbnailUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transcript?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  analysisStatus?: Prisma.StringFieldUpdateOperationsInput | string
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -802,6 +837,7 @@ export type PracticeSessionCreateManyAnswerInput = {
   thumbnailUrl?: string | null
   transcript?: string | null
   duration?: number | null
+  analysisStatus?: string
   recordedAt?: Date | string
 }
 
@@ -812,6 +848,7 @@ export type PracticeSessionUpdateWithoutAnswerInput = {
   thumbnailUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transcript?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  analysisStatus?: Prisma.StringFieldUpdateOperationsInput | string
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutPracticeSessionsNestedInput
   sessionFeedback?: Prisma.SessionFeedbackUpdateManyWithoutSessionNestedInput
@@ -825,6 +862,7 @@ export type PracticeSessionUncheckedUpdateWithoutAnswerInput = {
   thumbnailUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transcript?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  analysisStatus?: Prisma.StringFieldUpdateOperationsInput | string
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessionFeedback?: Prisma.SessionFeedbackUncheckedUpdateManyWithoutSessionNestedInput
 }
@@ -837,6 +875,7 @@ export type PracticeSessionUncheckedUpdateManyWithoutAnswerInput = {
   thumbnailUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transcript?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  analysisStatus?: Prisma.StringFieldUpdateOperationsInput | string
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -880,6 +919,7 @@ export type PracticeSessionSelect<ExtArgs extends runtime.Types.Extensions.Inter
   thumbnailUrl?: boolean
   transcript?: boolean
   duration?: boolean
+  analysisStatus?: boolean
   recordedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   answer?: boolean | Prisma.StarAnswerDefaultArgs<ExtArgs>
@@ -896,6 +936,7 @@ export type PracticeSessionSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   thumbnailUrl?: boolean
   transcript?: boolean
   duration?: boolean
+  analysisStatus?: boolean
   recordedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   answer?: boolean | Prisma.StarAnswerDefaultArgs<ExtArgs>
@@ -910,6 +951,7 @@ export type PracticeSessionSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   thumbnailUrl?: boolean
   transcript?: boolean
   duration?: boolean
+  analysisStatus?: boolean
   recordedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   answer?: boolean | Prisma.StarAnswerDefaultArgs<ExtArgs>
@@ -924,10 +966,11 @@ export type PracticeSessionSelectScalar = {
   thumbnailUrl?: boolean
   transcript?: boolean
   duration?: boolean
+  analysisStatus?: boolean
   recordedAt?: boolean
 }
 
-export type PracticeSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "answerId" | "videoUrl" | "audioUrl" | "thumbnailUrl" | "transcript" | "duration" | "recordedAt", ExtArgs["result"]["practiceSession"]>
+export type PracticeSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "answerId" | "videoUrl" | "audioUrl" | "thumbnailUrl" | "transcript" | "duration" | "analysisStatus" | "recordedAt", ExtArgs["result"]["practiceSession"]>
 export type PracticeSessionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   answer?: boolean | Prisma.StarAnswerDefaultArgs<ExtArgs>
@@ -959,6 +1002,7 @@ export type $PracticeSessionPayload<ExtArgs extends runtime.Types.Extensions.Int
     thumbnailUrl: string | null
     transcript: string | null
     duration: number | null
+    analysisStatus: string
     recordedAt: Date
   }, ExtArgs["result"]["practiceSession"]>
   composites: {}
@@ -1394,6 +1438,7 @@ export interface PracticeSessionFieldRefs {
   readonly thumbnailUrl: Prisma.FieldRef<"PracticeSession", 'String'>
   readonly transcript: Prisma.FieldRef<"PracticeSession", 'String'>
   readonly duration: Prisma.FieldRef<"PracticeSession", 'Int'>
+  readonly analysisStatus: Prisma.FieldRef<"PracticeSession", 'String'>
   readonly recordedAt: Prisma.FieldRef<"PracticeSession", 'DateTime'>
 }
     

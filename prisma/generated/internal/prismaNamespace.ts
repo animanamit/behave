@@ -1125,6 +1125,7 @@ export const PracticeSessionScalarFieldEnum = {
   thumbnailUrl: 'thumbnailUrl',
   transcript: 'transcript',
   duration: 'duration',
+  analysisStatus: 'analysisStatus',
   recordedAt: 'recordedAt'
 } as const
 
@@ -1141,6 +1142,8 @@ export const SessionFeedbackScalarFieldEnum = {
   wordsMatched: 'wordsMatched',
   totalWords: 'totalWords',
   keyPointsMissed: 'keyPointsMissed',
+  wentOffScript: 'wentOffScript',
+  offScriptImprovement: 'offScriptImprovement',
   createdAt: 'createdAt'
 } as const
 

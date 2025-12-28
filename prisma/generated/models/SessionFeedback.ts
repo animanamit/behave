@@ -48,6 +48,8 @@ export type SessionFeedbackMinAggregateOutputType = {
   wordsMatched: number | null
   totalWords: number | null
   keyPointsMissed: string | null
+  wentOffScript: boolean | null
+  offScriptImprovement: string | null
   createdAt: Date | null
 }
 
@@ -61,6 +63,8 @@ export type SessionFeedbackMaxAggregateOutputType = {
   wordsMatched: number | null
   totalWords: number | null
   keyPointsMissed: string | null
+  wentOffScript: boolean | null
+  offScriptImprovement: string | null
   createdAt: Date | null
 }
 
@@ -74,6 +78,8 @@ export type SessionFeedbackCountAggregateOutputType = {
   wordsMatched: number
   totalWords: number
   keyPointsMissed: number
+  wentOffScript: number
+  offScriptImprovement: number
   createdAt: number
   _all: number
 }
@@ -101,6 +107,8 @@ export type SessionFeedbackMinAggregateInputType = {
   wordsMatched?: true
   totalWords?: true
   keyPointsMissed?: true
+  wentOffScript?: true
+  offScriptImprovement?: true
   createdAt?: true
 }
 
@@ -114,6 +122,8 @@ export type SessionFeedbackMaxAggregateInputType = {
   wordsMatched?: true
   totalWords?: true
   keyPointsMissed?: true
+  wentOffScript?: true
+  offScriptImprovement?: true
   createdAt?: true
 }
 
@@ -127,6 +137,8 @@ export type SessionFeedbackCountAggregateInputType = {
   wordsMatched?: true
   totalWords?: true
   keyPointsMissed?: true
+  wentOffScript?: true
+  offScriptImprovement?: true
   createdAt?: true
   _all?: true
 }
@@ -227,6 +239,8 @@ export type SessionFeedbackGroupByOutputType = {
   wordsMatched: number | null
   totalWords: number | null
   keyPointsMissed: string | null
+  wentOffScript: boolean
+  offScriptImprovement: string | null
   createdAt: Date
   _count: SessionFeedbackCountAggregateOutputType | null
   _avg: SessionFeedbackAvgAggregateOutputType | null
@@ -263,6 +277,8 @@ export type SessionFeedbackWhereInput = {
   wordsMatched?: Prisma.IntNullableFilter<"SessionFeedback"> | number | null
   totalWords?: Prisma.IntNullableFilter<"SessionFeedback"> | number | null
   keyPointsMissed?: Prisma.StringNullableFilter<"SessionFeedback"> | string | null
+  wentOffScript?: Prisma.BoolFilter<"SessionFeedback"> | boolean
+  offScriptImprovement?: Prisma.StringNullableFilter<"SessionFeedback"> | string | null
   createdAt?: Prisma.DateTimeFilter<"SessionFeedback"> | Date | string
   session?: Prisma.XOR<Prisma.PracticeSessionScalarRelationFilter, Prisma.PracticeSessionWhereInput>
 }
@@ -277,6 +293,8 @@ export type SessionFeedbackOrderByWithRelationInput = {
   wordsMatched?: Prisma.SortOrderInput | Prisma.SortOrder
   totalWords?: Prisma.SortOrderInput | Prisma.SortOrder
   keyPointsMissed?: Prisma.SortOrderInput | Prisma.SortOrder
+  wentOffScript?: Prisma.SortOrder
+  offScriptImprovement?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   session?: Prisma.PracticeSessionOrderByWithRelationInput
 }
@@ -294,6 +312,8 @@ export type SessionFeedbackWhereUniqueInput = Prisma.AtLeast<{
   wordsMatched?: Prisma.IntNullableFilter<"SessionFeedback"> | number | null
   totalWords?: Prisma.IntNullableFilter<"SessionFeedback"> | number | null
   keyPointsMissed?: Prisma.StringNullableFilter<"SessionFeedback"> | string | null
+  wentOffScript?: Prisma.BoolFilter<"SessionFeedback"> | boolean
+  offScriptImprovement?: Prisma.StringNullableFilter<"SessionFeedback"> | string | null
   createdAt?: Prisma.DateTimeFilter<"SessionFeedback"> | Date | string
   session?: Prisma.XOR<Prisma.PracticeSessionScalarRelationFilter, Prisma.PracticeSessionWhereInput>
 }, "id">
@@ -308,6 +328,8 @@ export type SessionFeedbackOrderByWithAggregationInput = {
   wordsMatched?: Prisma.SortOrderInput | Prisma.SortOrder
   totalWords?: Prisma.SortOrderInput | Prisma.SortOrder
   keyPointsMissed?: Prisma.SortOrderInput | Prisma.SortOrder
+  wentOffScript?: Prisma.SortOrder
+  offScriptImprovement?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.SessionFeedbackCountOrderByAggregateInput
   _avg?: Prisma.SessionFeedbackAvgOrderByAggregateInput
@@ -329,6 +351,8 @@ export type SessionFeedbackScalarWhereWithAggregatesInput = {
   wordsMatched?: Prisma.IntNullableWithAggregatesFilter<"SessionFeedback"> | number | null
   totalWords?: Prisma.IntNullableWithAggregatesFilter<"SessionFeedback"> | number | null
   keyPointsMissed?: Prisma.StringNullableWithAggregatesFilter<"SessionFeedback"> | string | null
+  wentOffScript?: Prisma.BoolWithAggregatesFilter<"SessionFeedback"> | boolean
+  offScriptImprovement?: Prisma.StringNullableWithAggregatesFilter<"SessionFeedback"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"SessionFeedback"> | Date | string
 }
 
@@ -341,6 +365,8 @@ export type SessionFeedbackCreateInput = {
   wordsMatched?: number | null
   totalWords?: number | null
   keyPointsMissed?: string | null
+  wentOffScript?: boolean
+  offScriptImprovement?: string | null
   createdAt?: Date | string
   session: Prisma.PracticeSessionCreateNestedOneWithoutSessionFeedbackInput
 }
@@ -355,6 +381,8 @@ export type SessionFeedbackUncheckedCreateInput = {
   wordsMatched?: number | null
   totalWords?: number | null
   keyPointsMissed?: string | null
+  wentOffScript?: boolean
+  offScriptImprovement?: string | null
   createdAt?: Date | string
 }
 
@@ -367,6 +395,8 @@ export type SessionFeedbackUpdateInput = {
   wordsMatched?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalWords?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   keyPointsMissed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wentOffScript?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  offScriptImprovement?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   session?: Prisma.PracticeSessionUpdateOneRequiredWithoutSessionFeedbackNestedInput
 }
@@ -381,6 +411,8 @@ export type SessionFeedbackUncheckedUpdateInput = {
   wordsMatched?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalWords?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   keyPointsMissed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wentOffScript?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  offScriptImprovement?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -394,6 +426,8 @@ export type SessionFeedbackCreateManyInput = {
   wordsMatched?: number | null
   totalWords?: number | null
   keyPointsMissed?: string | null
+  wentOffScript?: boolean
+  offScriptImprovement?: string | null
   createdAt?: Date | string
 }
 
@@ -406,6 +440,8 @@ export type SessionFeedbackUpdateManyMutationInput = {
   wordsMatched?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalWords?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   keyPointsMissed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wentOffScript?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  offScriptImprovement?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -419,6 +455,8 @@ export type SessionFeedbackUncheckedUpdateManyInput = {
   wordsMatched?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalWords?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   keyPointsMissed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wentOffScript?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  offScriptImprovement?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -442,6 +480,8 @@ export type SessionFeedbackCountOrderByAggregateInput = {
   wordsMatched?: Prisma.SortOrder
   totalWords?: Prisma.SortOrder
   keyPointsMissed?: Prisma.SortOrder
+  wentOffScript?: Prisma.SortOrder
+  offScriptImprovement?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -461,6 +501,8 @@ export type SessionFeedbackMaxOrderByAggregateInput = {
   wordsMatched?: Prisma.SortOrder
   totalWords?: Prisma.SortOrder
   keyPointsMissed?: Prisma.SortOrder
+  wentOffScript?: Prisma.SortOrder
+  offScriptImprovement?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -474,6 +516,8 @@ export type SessionFeedbackMinOrderByAggregateInput = {
   wordsMatched?: Prisma.SortOrder
   totalWords?: Prisma.SortOrder
   keyPointsMissed?: Prisma.SortOrder
+  wentOffScript?: Prisma.SortOrder
+  offScriptImprovement?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -542,6 +586,8 @@ export type SessionFeedbackCreateWithoutSessionInput = {
   wordsMatched?: number | null
   totalWords?: number | null
   keyPointsMissed?: string | null
+  wentOffScript?: boolean
+  offScriptImprovement?: string | null
   createdAt?: Date | string
 }
 
@@ -554,6 +600,8 @@ export type SessionFeedbackUncheckedCreateWithoutSessionInput = {
   wordsMatched?: number | null
   totalWords?: number | null
   keyPointsMissed?: string | null
+  wentOffScript?: boolean
+  offScriptImprovement?: string | null
   createdAt?: Date | string
 }
 
@@ -596,6 +644,8 @@ export type SessionFeedbackScalarWhereInput = {
   wordsMatched?: Prisma.IntNullableFilter<"SessionFeedback"> | number | null
   totalWords?: Prisma.IntNullableFilter<"SessionFeedback"> | number | null
   keyPointsMissed?: Prisma.StringNullableFilter<"SessionFeedback"> | string | null
+  wentOffScript?: Prisma.BoolFilter<"SessionFeedback"> | boolean
+  offScriptImprovement?: Prisma.StringNullableFilter<"SessionFeedback"> | string | null
   createdAt?: Prisma.DateTimeFilter<"SessionFeedback"> | Date | string
 }
 
@@ -608,6 +658,8 @@ export type SessionFeedbackCreateManySessionInput = {
   wordsMatched?: number | null
   totalWords?: number | null
   keyPointsMissed?: string | null
+  wentOffScript?: boolean
+  offScriptImprovement?: string | null
   createdAt?: Date | string
 }
 
@@ -620,6 +672,8 @@ export type SessionFeedbackUpdateWithoutSessionInput = {
   wordsMatched?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalWords?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   keyPointsMissed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wentOffScript?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  offScriptImprovement?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -632,6 +686,8 @@ export type SessionFeedbackUncheckedUpdateWithoutSessionInput = {
   wordsMatched?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalWords?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   keyPointsMissed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wentOffScript?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  offScriptImprovement?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -644,6 +700,8 @@ export type SessionFeedbackUncheckedUpdateManyWithoutSessionInput = {
   wordsMatched?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalWords?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   keyPointsMissed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wentOffScript?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  offScriptImprovement?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -659,6 +717,8 @@ export type SessionFeedbackSelect<ExtArgs extends runtime.Types.Extensions.Inter
   wordsMatched?: boolean
   totalWords?: boolean
   keyPointsMissed?: boolean
+  wentOffScript?: boolean
+  offScriptImprovement?: boolean
   createdAt?: boolean
   session?: boolean | Prisma.PracticeSessionDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["sessionFeedback"]>
@@ -673,6 +733,8 @@ export type SessionFeedbackSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   wordsMatched?: boolean
   totalWords?: boolean
   keyPointsMissed?: boolean
+  wentOffScript?: boolean
+  offScriptImprovement?: boolean
   createdAt?: boolean
   session?: boolean | Prisma.PracticeSessionDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["sessionFeedback"]>
@@ -687,6 +749,8 @@ export type SessionFeedbackSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   wordsMatched?: boolean
   totalWords?: boolean
   keyPointsMissed?: boolean
+  wentOffScript?: boolean
+  offScriptImprovement?: boolean
   createdAt?: boolean
   session?: boolean | Prisma.PracticeSessionDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["sessionFeedback"]>
@@ -701,10 +765,12 @@ export type SessionFeedbackSelectScalar = {
   wordsMatched?: boolean
   totalWords?: boolean
   keyPointsMissed?: boolean
+  wentOffScript?: boolean
+  offScriptImprovement?: boolean
   createdAt?: boolean
 }
 
-export type SessionFeedbackOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sessionId" | "contentFidelityScore" | "pacing" | "confidence" | "suggestions" | "wordsMatched" | "totalWords" | "keyPointsMissed" | "createdAt", ExtArgs["result"]["sessionFeedback"]>
+export type SessionFeedbackOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sessionId" | "contentFidelityScore" | "pacing" | "confidence" | "suggestions" | "wordsMatched" | "totalWords" | "keyPointsMissed" | "wentOffScript" | "offScriptImprovement" | "createdAt", ExtArgs["result"]["sessionFeedback"]>
 export type SessionFeedbackInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   session?: boolean | Prisma.PracticeSessionDefaultArgs<ExtArgs>
 }
@@ -730,6 +796,8 @@ export type $SessionFeedbackPayload<ExtArgs extends runtime.Types.Extensions.Int
     wordsMatched: number | null
     totalWords: number | null
     keyPointsMissed: string | null
+    wentOffScript: boolean
+    offScriptImprovement: string | null
     createdAt: Date
   }, ExtArgs["result"]["sessionFeedback"]>
   composites: {}
@@ -1164,6 +1232,8 @@ export interface SessionFeedbackFieldRefs {
   readonly wordsMatched: Prisma.FieldRef<"SessionFeedback", 'Int'>
   readonly totalWords: Prisma.FieldRef<"SessionFeedback", 'Int'>
   readonly keyPointsMissed: Prisma.FieldRef<"SessionFeedback", 'String'>
+  readonly wentOffScript: Prisma.FieldRef<"SessionFeedback", 'Boolean'>
+  readonly offScriptImprovement: Prisma.FieldRef<"SessionFeedback", 'String'>
   readonly createdAt: Prisma.FieldRef<"SessionFeedback", 'DateTime'>
 }
     

@@ -108,15 +108,16 @@ model StarAnswer {
 }
 
 model PracticeSession {
-  id           String   @id @default(uuid()) @db.Uuid
-  userId       String
-  answerId     String   @db.Uuid
-  videoUrl     String
-  audioUrl     String?
-  thumbnailUrl String?
-  transcript   String?
-  duration     Int?
-  recordedAt   DateTime @default(now()) @db.Timestamptz
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String
+  answerId       String   @db.Uuid
+  videoUrl       String
+  audioUrl       String?
+  thumbnailUrl   String?
+  transcript     String?
+  duration       Int?
+  analysisStatus String   @default("pending") // pending, transcribing, analyzing, completed, failed
+  recordedAt     DateTime @default(now()) @db.Timestamptz
 
   // Relations
   user            User              @relation(fields: [userId], references: [id])
@@ -136,6 +137,8 @@ model SessionFeedback {
   wordsMatched         Int?
   totalWords           Int?
   keyPointsMissed      String?
+  wentOffScript        Boolean  @default(false)
+  offScriptImprovement  String?
   createdAt            DateTime @default(now()) @db.Timestamptz
 
   // Relations

@@ -124,3 +124,54 @@ export const GenerateAnswersSchema = z.object({
 
 export type STARAnswer = z.infer<typeof STARAnswerSchema>;
 export type GenerateAnswersResponse = z.infer<typeof GenerateAnswersSchema>;
+
+// ------------------------------------------------------------------
+// PRACTICE SESSION SCHEMAS
+// ------------------------------------------------------------------
+
+export const SavePracticeSessionSchema = z.object({
+  answerId: z.string().uuid(),
+  videoS3Key: z.string().min(1),
+  duration: z.number().int().min(0),
+  userId: z.string().min(1),
+});
+
+export type SavePracticeSessionRequest = z.infer<typeof SavePracticeSessionSchema>;
+
+export const PracticeSessionWithFeedbackSchema = z.object({
+  id: z.string().uuid(),
+  videoUrl: z.string().url(),
+  audioUrl: z.string().url().nullable(),
+  transcript: z.string().nullable(),
+  duration: z.number().nullable(),
+  recordedAt: z.coerce.date(),
+  analysisStatus: z.enum([
+    "pending",
+    "transcribing",
+    "analyzing",
+    "completed",
+    "failed",
+  ]),
+  answer: z.object({
+    id: z.union([z.string(), z.number()]),
+    competency: z.string(),
+    question: z.string(),
+    fullAnswer: z.string(),
+  }),
+  feedback: z
+    .object({
+      contentFidelityScore: z.number().min(0).max(100),
+      pacing: z.string(),
+      confidence: z.string(),
+      suggestions: z.string(),
+      wordsMatched: z.number().nullable(),
+      totalWords: z.number().nullable(),
+      wentOffScript: z.boolean(),
+      offScriptImprovement: z.string().nullable(),
+    })
+    .nullable(),
+});
+
+export type PracticeSessionWithFeedback = z.infer<
+  typeof PracticeSessionWithFeedbackSchema
+>;

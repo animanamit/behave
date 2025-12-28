@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { STARAnswer } from "@/lib/zod-schemas";
 import { Button } from "@/components/ui/button";
 import { Heading, Text } from "@/components/ui/typography";
@@ -15,7 +15,7 @@ interface TeleprompterProps {
 
 const SECTIONS = ["Question", "Situation", "Task", "Action", "Result"] as const;
 
-export function Teleprompter({ answer, className }: TeleprompterProps) {
+export const Teleprompter = memo(function Teleprompter({ answer, className }: TeleprompterProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -211,4 +211,4 @@ export function Teleprompter({ answer, className }: TeleprompterProps) {
       </div>
     </div>
   );
-}
+});
