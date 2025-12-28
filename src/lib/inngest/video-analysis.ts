@@ -17,7 +17,7 @@ const streamToBuffer = async (stream: any) => {
 };
 
 const extractS3Key = (url: string): string => {
-  const match = url.match(/amazonaws\.com\/(.+)$/);
+  const match = url.match(/s3\.amazonaws\.com\/(.+)$/);
   return match ? match[1] : "";
 };
 
@@ -26,66 +26,85 @@ export const transcribeVideo = inngest.createFunction(
   { event: "video/uploaded" },
   async ({ step, event }) => {
     const { sessionId } = event.data;
+    console.log('[transcribe-video] Received event:', { sessionId });
 
-    const session = await step.run("fetch-session", async () => {
-      const s = await db.practiceSession.findUnique({
-        where: { id: sessionId },
+    try {
+      const sessionResult = await step.run("fetch-session", async () => {
+        console.log('[transcribe-video] Fetching session from DB...');
+        const session = await db.practiceSession.findUnique({
+          where: { id: sessionId },
+        });
+        if (!session) {
+          console.error('[transcribe-video] Session not found:', sessionId);
+          throw new Error("Session not found");
+        }
+        console.log('[transcribe-video] Session found, videoUrl:', session.videoUrl);
+        return session;
       });
-      if (!s) throw new Error("Session not found");
-      return s;
-    });
 
-    await step.run("update-status-transcribing", async () => {
-      await db.practiceSession.update({
-        where: { id: sessionId },
-        data: { analysisStatus: "transcribing" },
+      await step.run("update-status-transcribing", async () => {
+        console.log('[transcribe-video] Updating status to: transcribing');
+        await db.practiceSession.update({
+          where: { id: sessionId },
+          data: { analysisStatus: "transcribing" },
+        });
       });
-    });
 
-    const videoBuffer = await step.run("download-video", async () => {
-      const s3Key = extractS3Key(session.videoUrl);
-      const command = new GetObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
-        Key: s3Key,
+      console.log('[transcribe-video] Starting video download...');
+      const buffer = await step.run("download-video", async () => {
+        const s3Key = extractS3Key(sessionResult.videoUrl);
+        console.log('[transcribe-video] S3 key extracted:', s3Key);
+        const command = new GetObjectCommand({
+          Bucket: process.env.AWS_S3_BUCKET!,
+          Key: s3Key,
+        });
+        const response = await s3Client.send(command);
+        if (!response.Body) {
+          throw new Error("No body in S3 response");
+        }
+        return await streamToBuffer(response.Body);
       });
-      const response = await s3Client.send(command);
-      return await streamToBuffer(response.Body);
-    });
 
-    const transcript = await step.run("transcribe-audio", async () => {
-      const file = new File([videoBuffer], "recording.webm", {
+      const file = new File([buffer], "recording.webm", {
         type: "video/webm",
       });
 
+      console.log('[transcribe-video] Starting transcription...');
       const transcription = await openai.audio.transcriptions.create({
         file: file,
         model: "whisper-1",
       });
 
-      return transcription.text;
-    });
+      console.log('[transcribe-video] Transcription complete, text length:', transcription.text?.length);
+      const transcriptText = transcription.text || "";
 
-    const duration = Math.ceil(videoBuffer.length / 1024 / 100);
+      const duration = Math.ceil(buffer.length / 1024 / 100);
 
-    await step.run("save-transcript", async () => {
-      await db.practiceSession.update({
-        where: { id: sessionId },
-        data: {
-          transcript,
-          duration,
-          analysisStatus: "analyzing",
-        },
+      await step.run("save-transcript", async () => {
+        console.log('[transcribe-video] Saving transcript to DB...');
+        await db.practiceSession.update({
+          where: { id: sessionId },
+          data: {
+            transcript: transcriptText,
+            duration,
+            analysisStatus: "analyzing",
+          },
+        });
       });
-    });
 
-    await step.run("trigger-analysis", async () => {
-      await inngest.send({
-        name: "video/transcribed",
-        data: { sessionId },
+      await step.run("trigger-analysis", async () => {
+        console.log('[transcribe-video] Triggering analysis event...');
+        await inngest.send({
+          name: "video/transcribed",
+          data: { sessionId },
+        });
       });
-    });
 
-    return { success: true };
+      return { success: true };
+    } catch (error) {
+      console.error('[transcribe-video] ERROR:', error);
+      throw error;
+    }
   }
 );
 
@@ -93,96 +112,108 @@ export const analyzeRecording = inngest.createFunction(
   { id: "analyze-recording" },
   { event: "video/transcribed" },
   async ({ step }) => {
-    const { sessionId } = step.event.data;
+    console.log('[analyze-recording] Received event');
 
-    const data = await step.run("fetch-data", async () => {
-      const session = await db.practiceSession.findUnique({
-        where: { id: sessionId },
-        include: { answer: true },
+    try {
+      const resultData = await step.run("fetch-data", async () => {
+        const session = await db.practiceSession.findUnique({
+          where: { id: step.event.data.sessionId },
+          include: { answer: true },
+        });
+        if (!session || !session.transcript) {
+          console.error('[analyze-recording] Session or transcript not found');
+          throw new Error("Session or transcript not found");
+        }
+        console.log('[analyze-recording] Session and transcript found');
+        return session;
       });
-      if (!session || !session.transcript) {
-        throw new Error("Session or transcript not found");
-      }
-      return session;
-    });
 
-    const wordCounts = await step.run("count-words", async () => {
-      const scriptWords = data.answer.fullAnswer.split(/\s+/).length;
-      const transcriptWords = data.transcript.split(/\s+/).length;
-      return { scriptWords, transcriptWords };
-    });
+      const wordCounts = await step.run("count-words", async () => {
+        const scriptWords = resultData.answer.fullAnswer.split(/\s+/).length;
+        const transcriptWords = resultData.transcript.split(/\s+/).length;
+        console.log('[analyze-recording] Word counts - Script:', scriptWords, 'Transcript:', transcriptWords);
+        return { scriptWords, transcriptWords };
+      });
 
-    const analysis = await step.run("ai-analysis", async () => {
-      const { object } = await generateObject({
-        model: "google/gemini-2.0-flash",
-        schema: z.object({
-          contentFidelityScore: z.number().min(0).max(100),
-          pacing: z.enum(["Too fast", "Just right", "Too slow"]),
-          confidence: z.enum(["Low", "Medium", "High"]),
-          wentOffScript: z.boolean(),
-          offScriptImprovement: z.enum([
-            "Made it better",
-            "Made it worse",
-            "No change",
-          ]),
-          suggestions: z.string(),
-        }),
-        prompt: `Compare this interview recording transcript to ideal STAR script and provide feedback.
+      const analysis = await step.run("ai-analysis", async () => {
+        const { object } = await generateObject({
+          model: "google/gemini-2.0-flash-exp",
+          schema: z.object({
+            contentFidelityScore: z.number().min(0).max(100),
+            pacing: z.enum(["Too fast", "Just right", "Too slow"]),
+            confidence: z.enum(["Low", "Medium", "High"]),
+            wentOffScript: z.boolean(),
+            offScriptImprovement: z.enum([
+              "Made it better",
+              "Made it worse",
+              "No change",
+            ]),
+            suggestions: z.string(),
+          }),
+          prompt: `Compare this interview recording transcript to ideal STAR script and provide feedback.
 
 TRANSCRIPT:
-${data.transcript}
+${resultData.transcript}
 
 IDEAL SCRIPT:
-${data.answer.fullAnswer}
+${resultData.answer.fullAnswer}
 
 COMPETENCY:
-${data.answer.competency}
+${resultData.answer.competency}
 
 Instructions:
 1. Score content fidelity (0-100) based on how well they covered the script
-2. Assess pacing: "${wordCounts.transcriptWords} words" over ~${data.duration || 2} minutes
+2. Assess pacing: "${wordCounts.transcriptWords} words" over ~${resultData.duration || 2} minutes
 3. Rate confidence: "Low" (hesitant, fillers), "Medium", "High" (clear, assertive)
 4. Did they go off-script? (compare if they added content not in script)
 5. If off-script, did it help or hurt their answer?
 6. Provide 1-2 specific suggestions for improvement
 
 Keep feedback concise and actionable.`,
+        });
+
+        console.log('[analyze-recording] AI analysis complete');
+        return object;
       });
 
-      return object;
-    });
-
-    const wordsMatched = await step.run("count-matched-words", async () => {
-      const scriptWords = data.answer.fullAnswer.toLowerCase().split(/\s+/);
-      const transcriptWords = data.transcript.toLowerCase().split(/\s+/);
-      const transcriptSet = new Set(transcriptWords);
-      const matched = scriptWords.filter((w) => transcriptSet.has(w)).length;
-      return matched;
-    });
-
-    await step.run("create-feedback", async () => {
-      await db.sessionFeedback.create({
-        data: {
-          sessionId: sessionId,
-          contentFidelityScore: analysis.contentFidelityScore,
-          pacing: analysis.pacing,
-          confidence: analysis.confidence,
-          suggestions: analysis.suggestions,
-          wordsMatched: wordsMatched,
-          totalWords: wordCounts.scriptWords,
-          wentOffScript: analysis.wentOffScript,
-          offScriptImprovement: analysis.offScriptImprovement,
-        },
+      const wordsMatched = await step.run("count-matched-words", async () => {
+        const scriptWords = resultData.answer.fullAnswer.toLowerCase().split(/\s+/);
+        const transcriptWords = resultData.transcript.toLowerCase().split(/\s+/);
+        const transcriptSet = new Set(transcriptWords);
+        const matched = scriptWords.filter((w) => transcriptSet.has(w)).length;
+        console.log('[analyze-recording] Words matched:', matched, 'of', scriptWords);
+        return matched;
       });
-    });
 
-    await step.run("mark-completed", async () => {
-      await db.practiceSession.update({
-        where: { id: sessionId },
-        data: { analysisStatus: "completed" },
+      await step.run("create-feedback", async () => {
+        console.log('[analyze-recording] Creating feedback in DB...');
+        await db.sessionFeedback.create({
+          data: {
+            sessionId: step.event.data.sessionId,
+            contentFidelityScore: analysis.contentFidelityScore,
+            pacing: analysis.pacing,
+            confidence: analysis.confidence,
+            suggestions: analysis.suggestions,
+            wordsMatched: wordsMatched,
+            totalWords: wordCounts.scriptWords,
+            wentOffScript: analysis.wentOffScript,
+            offScriptImprovement: analysis.offScriptImprovement,
+          },
+        });
       });
-    });
 
-    return { success: true };
+      await step.run("mark-completed", async () => {
+        console.log('[analyze-recording] Marking session as completed');
+        await db.practiceSession.update({
+          where: { id: step.event.data.sessionId },
+          data: { analysisStatus: "completed" },
+        });
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('[analyze-recording] ERROR:', error);
+      throw error;
+    }
   }
 );

@@ -26,43 +26,32 @@ import { authClient } from "@/lib/auth-client";
 import SignOutButton from "@/components/auth/sign-out-button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Menu items.
 const items = [
   {
     title: "Overview",
     url: "/home",
     icon: Home,
   },
-  // {
-  //   title: "Upload Document",
-  //   url: "/upload",
-  //   icon: Upload,
-  // },
+  {
+    title: "Upload Document",
+    url: "/upload",
+    icon: Upload,
+  },
   {
     title: "Practice Session",
     url: "/practice",
     icon: Mic,
   },
-  // {
-  //   title: "Past Sessions",
-  //   url: "/review",
-  //   icon: History,
-  // },
+  {
+    title: "Past Sessions",
+    url: "/review",
+    icon: History,
+  },
   {
     title: "Answers",
     url: "/answers",
     icon: FileText,
   },
-  // {
-  //   title: "Answers (Inngest Polling)",
-  //   url: "/answers-inngest-polling",
-  //   icon: Sparkles,
-  // },
-  // {
-  //   title: "Settings",
-  //   url: "/settings",
-  //   icon: Settings,
-  // },
 ];
 
 export function AppSidebar() {
@@ -118,9 +107,6 @@ export function AppSidebar() {
         <div className="group-data-[collapsible=icon]:hidden">
           <SignOutButton />
         </div>
-        {/* In icon mode, we might want a simplified logout or just hide it. 
-            Hiding it for now as SignOutButton typically has text. 
-            Ideally SignOutButton would be responsive or we show an icon-only version here. */}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

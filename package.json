@@ -11,7 +11,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "inngest": "inngestctl dev --project-dir src/lib/inngest"
   },
   "dependencies": {
     "@ai-sdk/react": "^2.0.98",

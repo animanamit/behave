@@ -29,6 +29,7 @@ export function PracticeSession({ answer, onBack }: PracticeSessionProps) {
 
   const getPresignedUrlMutation = trpc.files.getPresignedUrl.useMutation();
   const savePracticeSessionMutation = trpc.practiceSessions.savePracticeSession.useMutation();
+  const utils = trpc.useUtils();
 
   const {
     recordingState,
@@ -61,13 +62,16 @@ export function PracticeSession({ answer, onBack }: PracticeSessionProps) {
     setIsSaving(true);
     try {
       const fileName = `practice-${answer.id}-${Date.now()}.webm`;
-      const fileType = recordedBlob.type || "video/webm";
+      const fileType = "video/webm";
 
+      console.log('[PracticeSession] Step 1: Getting presigned URL...', { fileName, fileType });
       const { uploadURL, s3Key } = await getPresignedUrlMutation.mutateAsync({
         fileName,
-        contentType: fileType as any,
+        contentType: fileType,
       });
+      console.log('[PracticeSession] Step 1: Presigned URL received', { s3Key });
 
+      console.log('[PracticeSession] Step 2: Uploading to S3...');
       const uploadResponse = await fetch(uploadURL, {
         method: "PUT",
         body: recordedBlob,
@@ -75,21 +79,31 @@ export function PracticeSession({ answer, onBack }: PracticeSessionProps) {
       });
 
       if (!uploadResponse.ok) {
+        console.error('[PracticeSession] Step 2: Upload failed', uploadResponse.status);
         throw new Error("Failed to upload to S3");
       }
+      console.log('[PracticeSession] Step 2: Upload complete');
 
+      console.log('[PracticeSession] Step 3: Saving session to DB...');
       const result = await savePracticeSessionMutation.mutateAsync({
         answerId: answer.id as string,
         videoS3Key: s3Key,
         duration: timer,
         userId,
       });
+      console.log('[PracticeSession] Step 3: Session saved', result, 'Inngest event "video/uploaded" should trigger now');
 
       setShowSuccessOverlay(true);
-      toast.success("Recording saved successfully!");
-      
+      toast.success("Recording saved successfully! Analysis in progress...");
+
+      setTimeout(() => {
+        toast.info("Check the Review page for AI feedback once analysis is complete.", {
+          duration: 6000,
+        });
+      }, 2000);
+
     } catch (error) {
-      console.error("Save error:", error);
+      console.error('[PracticeSession] ERROR:', error);
       toast.error("Failed to save recording");
       setIsSaving(false);
     }

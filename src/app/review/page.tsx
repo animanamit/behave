@@ -6,6 +6,8 @@ import { trpc } from "@/lib/trpc-client";
 import { authClient } from "@/lib/auth-client";
 import { Loader2, Sparkles } from "lucide-react";
 import { SessionList } from "@/components/review/session-list";
+import { toast } from "sonner";
+import { useEffect } from "react";
 
 export default function ReviewPage() {
   const { data: session } = authClient.useSession();
@@ -15,6 +17,38 @@ export default function ReviewPage() {
     { userId: userId ?? "" },
     { enabled: !!userId }
   );
+
+  useEffect(() => {
+    if (!sessionsQuery.data || sessionsQuery.data.length === 0) return;
+
+    const analyzingSessions = sessionsQuery.data.filter(s =>
+      s.analysisStatus === 'pending' ||
+      s.analysisStatus === 'transcribing' ||
+      s.analysisStatus === 'analyzing'
+    );
+
+    if (analyzingSessions.length > 0) {
+      const mostRecent = analyzingSessions[0];
+      const statusMessages: Record<string, string> = {
+        'pending': 'Uploading video...',
+        'transcribing': 'Transcribing your recording with AI...',
+        'analyzing': 'Analyzing your performance...'
+      };
+
+      if (mostRecent.analysisStatus in statusMessages) {
+        toast.info(statusMessages[mostRecent.analysisStatus], {
+          id: `session-${mostRecent.id}-status`,
+          duration: Infinity,
+        });
+      }
+    }
+
+    return () => {
+      analyzingSessions.forEach(s => {
+        toast.dismiss(`session-${s.id}-status`);
+      });
+    };
+  }, [sessionsQuery.data]);
 
   if (sessionsQuery.isLoading) {
     return (

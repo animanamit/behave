@@ -2,14 +2,7 @@ import { z } from "zod";
 
 export const PresignedURLRequestSchema = z.object({
   fileName: z.string().min(1, "File name required"),
-  contentType: z.enum([
-    "application/pdf",
-    "text/plain",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "video/webm",
-    "video/mp4",
-  ]),
+  contentType: z.string().min(1, "Content type required"),
 });
 
 export type PresignedUrlRequest = z.infer<typeof PresignedURLRequestSchema>;
@@ -138,39 +131,40 @@ export const SavePracticeSessionSchema = z.object({
 
 export type SavePracticeSessionRequest = z.infer<typeof SavePracticeSessionSchema>;
 
-export const PracticeSessionWithFeedbackSchema = z.object({
-  id: z.string().uuid(),
-  videoUrl: z.string().url(),
-  audioUrl: z.string().url().nullable(),
-  transcript: z.string().nullable(),
-  duration: z.number().nullable(),
-  recordedAt: z.coerce.date(),
-  analysisStatus: z.enum([
-    "pending",
-    "transcribing",
-    "analyzing",
-    "completed",
-    "failed",
-  ]),
-  answer: z.object({
-    id: z.union([z.string(), z.number()]),
-    competency: z.string(),
-    question: z.string(),
-    fullAnswer: z.string(),
-  }),
-  feedback: z
-    .object({
-      contentFidelityScore: z.number().min(0).max(100),
-      pacing: z.string(),
-      confidence: z.string(),
-      suggestions: z.string(),
-      wordsMatched: z.number().nullable(),
-      totalWords: z.number().nullable(),
-      wentOffScript: z.boolean(),
-      offScriptImprovement: z.string().nullable(),
-    })
-    .nullable(),
-});
+  export const PracticeSessionWithFeedbackSchema = z.object({
+    id: z.string().uuid(),
+    videoUrl: z.string().url(),
+    videoS3Key: z.string().optional(),
+    audioUrl: z.string().url().nullable(),
+    transcript: z.string().nullable(),
+    duration: z.number().nullable(),
+    recordedAt: z.coerce.date(),
+    analysisStatus: z.enum([
+      "pending",
+      "transcribing",
+      "analyzing",
+      "completed",
+      "failed",
+    ]),
+    answer: z.object({
+      id: z.union([z.string(), z.number()]),
+      competency: z.string(),
+      question: z.string(),
+      fullAnswer: z.string(),
+    }),
+    feedback: z
+      .object({
+        contentFidelityScore: z.number().min(0).max(100),
+        pacing: z.string(),
+        confidence: z.string(),
+        suggestions: z.string(),
+        wordsMatched: z.number().nullable(),
+        totalWords: z.number().nullable(),
+        wentOffScript: z.boolean(),
+        offScriptImprovement: z.string().nullable(),
+      })
+      .nullable(),
+  });
 
 export type PracticeSessionWithFeedback = z.infer<
   typeof PracticeSessionWithFeedbackSchema

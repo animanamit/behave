@@ -2,6 +2,7 @@ import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { db } from "@/db/prisma";
 import { z } from "zod";
 import { inngest } from "@/lib/inngest/inngest";
+import { getPresignedUrl } from "@/lib/s3-client";
 import {
   SavePracticeSessionSchema,
   PracticeSessionWithFeedbackSchema,
@@ -23,13 +24,15 @@ export const practiceSessionsRouter = createTRPCRouter({
           analysisStatus: "pending",
         },
       });
+      console.log('[savePracticeSession] Session created:', session.id, 'videoUrl:', session.videoUrl, 'videoS3Key:', input.videoS3Key);
 
-      await inngest.send({
-        name: "video/uploaded",
+      const sendResult = await inngest.send({
+        name: "video/transcribe",
         data: { sessionId: session.id },
       });
+      console.log('[savePracticeSession] Inngest send result:', sendResult);
 
-      return { sessionId: session.id };
+      return { sessionId: session.id, videoS3Key: input.videoS3Key };
     }),
 
   getPracticeSession: protectedProcedure
