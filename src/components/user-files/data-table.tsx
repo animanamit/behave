@@ -30,7 +30,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   data,
-  rowSelection,    // <--- receive from parent
+  rowSelection, // <--- receive from parent
   setRowSelection, // <--- receive from parent
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
@@ -50,10 +50,16 @@ export function DataTable<TData, TValue>({
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className="hover:bg-transparent border-b border-border bg-muted/30">
+            <TableRow
+              key={headerGroup.id}
+              className="hover:bg-transparent border-b border-border bg-muted/30"
+            >
               {headerGroup.headers.map((header) => {
                 return (
-                  <TableHead key={header.id} className="h-10 font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-normal">
+                  <TableHead
+                    key={header.id}
+                    className="h-10 font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-normal"
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -84,7 +90,9 @@ export function DataTable<TData, TValue>({
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
-                <span className="text-sm text-muted-foreground">No files found.</span>
+                <span className="text-sm text-muted-foreground">
+                  No files found.
+                </span>
               </TableCell>
             </TableRow>
           )}

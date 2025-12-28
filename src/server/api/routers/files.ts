@@ -2,7 +2,11 @@ import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { db } from "@/db/prisma";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { UserFilesSchema, SaveFileSchema, PresignedURLRequestSchema } from "@/lib/zod-schemas";
+import {
+  UserFilesSchema,
+  SaveFileSchema,
+  PresignedURLRequestSchema,
+} from "@/lib/zod-schemas";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "@/lib/s3-client";
@@ -49,12 +53,16 @@ export const filesRouter = createTRPCRouter({
       if (!process.env.AWS_S3_BUCKET) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "S3 bucket is not configured. Please check your environment variables.",
+          message:
+            "S3 bucket is not configured. Please check your environment variables.",
         });
       }
 
       try {
-        const sanitizedFileName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const sanitizedFileName = input.fileName.replace(
+          /[^a-zA-Z0-9._-]/g,
+          "_"
+        );
         const key = `${Date.now()}-${sanitizedFileName}`;
 
         const command = new PutObjectCommand({
@@ -71,7 +79,8 @@ export const filesRouter = createTRPCRouter({
       } catch (error) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate a presigned S3 upload URL. Please try again.",
+          message:
+            "Failed to generate a presigned S3 upload URL. Please try again.",
         });
       }
     }),
@@ -102,7 +111,8 @@ export const filesRouter = createTRPCRouter({
       } catch (error) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to save file metadata to database. Please try again.",
+          message:
+            "Failed to save file metadata to database. Please try again.",
         });
       }
     }),

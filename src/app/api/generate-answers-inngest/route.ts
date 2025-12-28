@@ -6,7 +6,7 @@ import { db } from "@/db/prisma";
 
 /**
  * TRIGGER ENDPOINT (Inngest Version)
- * 
+ *
  * This is MUCH simpler than the streaming version!
  * It just sends an "event" to Inngest and returns immediately.
  * The actual generation happens in the background.
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     if (fileId) {
       const file = await db.file.findUnique({
         where: { id: fileId },
-        select: { s3Key: true }
+        select: { s3Key: true },
       });
       if (file) {
         s3KeyForJob = file.s3Key;
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       data: {
         userId: session.user.id,
         resumeText: finalResumeText, // might be undefined
-        s3Key: s3KeyForJob,          // new field!
+        s3Key: s3KeyForJob, // new field!
       },
     });
 
@@ -66,4 +66,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

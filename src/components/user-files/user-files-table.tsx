@@ -21,7 +21,8 @@ export function UserFilesTableSkeleton() {
 }
 
 const UserFilesTable = () => {
-  const { data: session, isPending: isSessionPending } = authClient.useSession();
+  const { data: session, isPending: isSessionPending } =
+    authClient.useSession();
   const userId = session?.user.id;
   const hasUserId = Boolean(userId);
 
@@ -42,7 +43,9 @@ const UserFilesTable = () => {
     const selectedIds = Object.keys(rowSelection);
     if (selectedIds.length === 0) return;
 
-    const confirm = window.confirm(`Are you sure you want to delete ${selectedIds.length} file(s)?`);
+    const confirm = window.confirm(
+      `Are you sure you want to delete ${selectedIds.length} file(s)?`
+    );
     if (!confirm) return;
 
     toast.loading("Deleting files...");
@@ -56,7 +59,7 @@ const UserFilesTable = () => {
 
       toast.dismiss();
       toast.success("Files deleted successfully");
-      
+
       // Refresh table and clear selection
       utils.files.getUserFiles.invalidate();
       setRowSelection({});
@@ -93,9 +96,9 @@ const UserFilesTable = () => {
           <span className="text-sm text-muted-foreground">
             {Object.keys(rowSelection).length} selected
           </span>
-          <Button 
-            variant="destructive" 
-            size="sm" 
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={handleDelete}
             disabled={deleteMutation.isPending}
           >
@@ -106,9 +109,9 @@ const UserFilesTable = () => {
       )}
 
       {tableData.data && (
-        <DataTable 
-          columns={columns} 
-          data={tableData.data} 
+        <DataTable
+          columns={columns}
+          data={tableData.data}
           rowSelection={rowSelection}
           setRowSelection={setRowSelection}
         />

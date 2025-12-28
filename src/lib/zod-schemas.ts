@@ -7,6 +7,8 @@ export const PresignedURLRequestSchema = z.object({
     "text/plain",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "video/webm",
+    "video/mp4",
   ]),
 });
 
@@ -72,7 +74,9 @@ export const UploadCareerDocSchema = z.object({
 export const STARAnswerSchema = z.object({
   id: z
     .union([z.string(), z.number()])
-    .describe("Unique identifier for the answer, sequential (1, 2, 3...) or UUID"),
+    .describe(
+      "Unique identifier for the answer, sequential (1, 2, 3...) or UUID"
+    ),
   competency: z
     .string()
     .describe(

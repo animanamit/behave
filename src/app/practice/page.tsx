@@ -3,7 +3,7 @@
 import { Activity, useState, Suspense } from "react";
 import { HomeLayout } from "@/components/layouts/home-layout";
 import { PracticeQuestionList } from "@/components/practice/practice-question-list";
-import { PracticeSession } from "@/components/practice/practice-session";
+import dynamic from "next/dynamic"; // Import dynamic
 import { trpc } from "@/lib/trpc-client";
 import { authClient } from "@/lib/auth-client";
 import { STARAnswer } from "@/lib/zod-schemas";
@@ -11,6 +11,22 @@ import { Heading, Text } from "@/components/ui/typography";
 import { Loader2, Sparkles, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+
+// Dynamically import PracticeSession to disable SSR for it
+const PracticeSession = dynamic(
+  () =>
+    import("@/components/practice/practice-session").then(
+      (mod) => mod.PracticeSession
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    ),
+  }
+);
 
 export default function PracticePage() {
   const { data: session } = authClient.useSession();
@@ -41,23 +57,17 @@ export default function PracticePage() {
 
   return (
     <HomeLayout>
-      <div className="h-[calc(100vh-4rem)] flex flex-col">
+      <div className="h-full">
         {/* List View Activity */}
         <Activity mode={mode === "list" ? "visible" : "hidden"}>
-          <div className="max-w-5xl mx-auto w-full p-6 space-y-8 pb-20">
-            <div className="flex justify-between items-center">
-              <div className="space-y-2">
-                <Heading as="h2">Select an Answer to Practice</Heading>
-                <Text variant="muted">
-                  Choose a generated answer to practice your delivery.
-                </Text>
-              </div>
-              <Link href="/home">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Dashboard
-                </Button>
-              </Link>
+          <div className="flex flex-col h-full space-y-6">
+            <div className="space-y-2 shrink-0">
+              <Heading as="h2" className="text-2xl tracking-tight">
+                Practice Mode
+              </Heading>
+              <Text variant="muted">
+                Select an answer to practice recording yourself.
+              </Text>
             </div>
 
             {answersQuery.isLoading ? (

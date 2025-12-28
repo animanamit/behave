@@ -33,7 +33,10 @@ export const columns: ColumnDef<userFile>[] = [
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
       />
@@ -57,8 +60,12 @@ export const columns: ColumnDef<userFile>[] = [
           <FileIcon className="h-4 w-4 text-muted-foreground" />
         </div>
         <div className="flex flex-col">
-          <Text variant="small" className="font-normal">{row.getValue("fileName")}</Text>
-          <Caption className="hidden md:block">{row.original.contentType}</Caption>
+          <Text variant="small" className="font-normal">
+            {row.getValue("fileName")}
+          </Text>
+          <Caption className="hidden md:block">
+            {row.original.contentType}
+          </Caption>
         </div>
       </div>
     ),
