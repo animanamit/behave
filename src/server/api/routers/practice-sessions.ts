@@ -2,11 +2,14 @@ import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { db } from "@/db/prisma";
 import { z } from "zod";
 import { inngest } from "@/lib/inngest/inngest";
-import { getPresignedUrl } from "@/lib/s3-client";
+import { TRPCError } from "@trpc/server";
+import { deleteMultipleFromS3 } from "@/lib/s3-client";
+import { withRetry } from "@/lib/retry";
 import {
   SavePracticeSessionSchema,
   PracticeSessionWithFeedbackSchema,
 } from "@/lib/zod-schemas";
+import { getPresignedUrl } from "@/lib/s3-client";
 
 export const practiceSessionsRouter = createTRPCRouter({
   savePracticeSession: protectedProcedure
@@ -101,5 +104,50 @@ export const practiceSessionsRouter = createTRPCRouter({
           } : null,
         };
       });
+    }),
+
+  deletePracticeSessions: protectedProcedure
+    .input(z.object({ sessionIds: z.array(z.string().uuid()) }))
+    .mutation(async ({ ctx, input }) => {
+      const sessions = await db.practiceSession.findMany({
+        where: {
+          id: { in: input.sessionIds },
+          userId: ctx.userId,
+        },
+      });
+
+      if (sessions.length !== input.sessionIds.length) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to delete some sessions",
+        });
+      }
+
+      try {
+        const s3Keys = sessions
+          .flatMap((session) => [
+            session.videoUrl?.split(".amazonaws.com/")[1],
+            session.audioUrl?.split(".amazonaws.com/")[1],
+            session.thumbnailUrl?.split(".amazonaws.com/")[1],
+          ])
+          .filter(Boolean) as string[];
+
+        await deleteMultipleFromS3(s3Keys);
+
+        await withRetry(
+          () => db.practiceSession.deleteMany({
+            where: { id: { in: input.sessionIds } },
+          }),
+          3,
+          1000
+        );
+
+        return { success: true, deletedCount: sessions.length };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete sessions",
+        });
+      }
     }),
 });

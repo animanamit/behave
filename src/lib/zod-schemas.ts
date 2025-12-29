@@ -3,6 +3,7 @@ import { z } from "zod";
 export const PresignedURLRequestSchema = z.object({
   fileName: z.string().min(1, "File name required"),
   contentType: z.string().min(1, "Content type required"),
+  userId: z.string().min(1, "User ID required"),
 });
 
 export type PresignedUrlRequest = z.infer<typeof PresignedURLRequestSchema>;

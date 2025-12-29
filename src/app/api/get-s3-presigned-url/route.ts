@@ -8,7 +8,7 @@ import { z } from "zod";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { fileName, contentType } = PresignedURLRequestSchema.parse(body);
+    const { fileName, contentType, userId } = PresignedURLRequestSchema.parse(body);
 
     if (!process.env.AWS_S3_BUCKET) {
       return NextResponse.json(
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const key = `${Date.now()}-${sanitizedFileName}`;
+    const key = `documents/${userId}/${Date.now()}-${sanitizedFileName}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET!,

@@ -63,7 +63,7 @@ export function PracticeSession({ answer, onBack }: PracticeSessionProps) {
     try {
       const fileName = `practice-${answer.id}-${Date.now()}.webm`;
       const fileType = "video/webm";
-      const s3Key = `practice-videos/${fileName}`;
+      const s3Key = `recordings/${userId}/${fileName}`;
 
       console.log('[PracticeSession] Step 1: Getting presigned URL...', { fileName, fileType });
       const { uploadURL } = await getPresignedUrlMutation.mutateAsync({

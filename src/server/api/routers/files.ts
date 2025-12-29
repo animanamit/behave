@@ -6,10 +6,8 @@ import {
   UserFilesSchema,
   SaveFileSchema,
 } from "@/lib/zod-schemas";
-import { getPresignedUrl } from "@/lib/s3-client";
-import { inngest } from "@/lib/inngest/inngest";
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { s3Client } from "@/lib/s3-client";
+import { getPresignedUrl, deleteFromS3, deleteMultipleFromS3 } from "@/lib/s3-client";
+import { withRetry } from "@/lib/retry";
 
 export const filesRouter = createTRPCRouter({
   getUserFiles: protectedProcedure
@@ -48,6 +46,7 @@ export const filesRouter = createTRPCRouter({
         s3Key: z.string().min(1),
         fileName: z.string().optional(),
         contentType: z.string().optional(),
+        userId: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -106,22 +105,57 @@ export const filesRouter = createTRPCRouter({
       }
 
       try {
-        await db.file.delete({
-          where: { id: input.id },
-        });
+        await deleteFromS3(file.s3Key);
 
-        await inngest.send({
-          name: "file/delete",
-          data: {
-            s3Key: file.s3Key,
-          },
-        });
+        await withRetry(
+          () => db.file.delete({ where: { id: input.id } }),
+          3,
+          1000
+        );
 
         return { success: true };
       } catch (error) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to delete file",
+        });
+      }
+    }),
+
+  deleteFiles: protectedProcedure
+    .input(z.object({ ids: z.array(z.string()) }))
+    .mutation(async ({ ctx, input }) => {
+      const files = await db.file.findMany({
+        where: {
+          id: { in: input.ids },
+          userId: ctx.userId,
+        },
+      });
+
+      if (files.length !== input.ids.length) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to delete some files",
+        });
+      }
+
+      try {
+        const s3Keys = files.map(file => file.s3Key);
+        await deleteMultipleFromS3(s3Keys);
+
+        await withRetry(
+          () => db.file.deleteMany({
+            where: { id: { in: input.ids } },
+          }),
+          3,
+          1000
+        );
+
+        return { success: true, deletedCount: files.length };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete files",
         });
       }
     }),

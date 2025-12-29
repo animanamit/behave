@@ -84,7 +84,7 @@ export const columns: ColumnDef<userFile>[] = [
     header: "Uploaded",
     cell: ({ row }) => (
       <span className="font-mono text-xs text-muted-foreground">
-        {format(new Date(row.getValue("uploadedAt")), "MMM d, yyyy")}
+        {format(new Date(row.getValue("uploadedAt")), "dd/MM/yy")}
       </span>
     ),
   },

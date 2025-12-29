@@ -142,7 +142,7 @@ model SessionFeedback {
   createdAt            DateTime @default(now()) @db.Timestamptz
 
   // Relations
-  session PracticeSession @relation(fields: [sessionId], references: [id])
+  session PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("sessionFeedback")
 }

@@ -25,6 +25,7 @@ interface DataTableProps<TData, TValue> {
   // Add these new props to control selection from outside
   rowSelection?: RowSelectionState;
   setRowSelection?: React.Dispatch<React.SetStateAction<RowSelectionState>>;
+  emptyMessage?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -32,6 +33,7 @@ export function DataTable<TData, TValue>({
   data,
   rowSelection, // <--- receive from parent
   setRowSelection, // <--- receive from parent
+  emptyMessage = "No data found.",
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -91,7 +93,7 @@ export function DataTable<TData, TValue>({
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
                 <span className="text-sm text-muted-foreground">
-                  No files found.
+                  {emptyMessage}
                 </span>
               </TableCell>
             </TableRow>

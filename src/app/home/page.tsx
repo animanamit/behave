@@ -4,8 +4,8 @@ import { HomeLayout } from "@/components/layouts/home-layout";
 import { Heading, Text } from "@/components/ui/typography";
 import { Section, Grid } from "@/components/ui/layout";
 import { authClient } from "@/lib/auth-client";
-import UploadCareerDoc from "@/components/upload-career-doc";
 import UserFilesTable from "@/components/user-files/user-files-table";
+import PracticeSessionsTable from "@/components/practice-sessions/practice-sessions-table";
 import Loading from "@/app/home/loading";
 
 export default function HomePage() {
@@ -33,6 +33,13 @@ export default function HomePage() {
               Your Documents
             </Heading>
             <UserFilesTable />
+          </Section>
+
+          <Section className="p-0 md:p-0">
+            <Heading as="h3" className="mb-6">
+              Practice Sessions
+            </Heading>
+            <PracticeSessionsTable />
           </Section>
         </Grid>
       </div>

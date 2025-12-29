@@ -1,83 +1,58 @@
 "use client";
 
 import { useState } from "react";
-import { columns } from "@/components/user-files/columns";
+import { columns } from "@/components/practice-sessions/columns";
 import { DataTable } from "@/components/user-files/data-table";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc-client";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PracticeSessionsTableSkeleton } from "./skeleton";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-export function UserFilesTableSkeleton() {
-  return (
-    <div className="rounded-md border">
-      <div className="p-4">
-        <Skeleton className="h-[250px] w-full rounded-md" />
-      </div>
-    </div>
-  );
-}
-
-const UserFilesTable = () => {
+const PracticeSessionsTable = () => {
   const { data: session, isPending: isSessionPending } =
     authClient.useSession();
   const userId = session?.user.id;
   const hasUserId = Boolean(userId);
 
-  // 1. State for selection
   const [rowSelection, setRowSelection] = useState({});
 
   const utils = trpc.useUtils();
-  const tableData = trpc.files.getUserFiles.useQuery(
+  const tableData = trpc.practiceSessions.getUserPracticeSessions.useQuery(
     { userId: userId ?? "" },
     { enabled: hasUserId }
   );
 
-  // 2. Delete Mutations
-  const deleteMutation = trpc.files.deleteFile.useMutation();
-  const deleteFilesMutation = trpc.files.deleteFiles.useMutation();
+  const deleteMutation = trpc.practiceSessions.deletePracticeSessions.useMutation();
 
-  // 3. Handle Deletion
   const handleDelete = async () => {
     const selectedIds = Object.keys(rowSelection);
     if (selectedIds.length === 0) return;
 
-    toast.loading("Deleting files...");
+    toast.loading("Deleting practice sessions...");
 
     try {
-      let result;
-
-      if (selectedIds.length === 1) {
-        await deleteMutation.mutateAsync({ id: selectedIds[0] });
-        result = { deletedCount: 1 };
-      } else {
-        result = await deleteFilesMutation.mutateAsync({ ids: selectedIds });
-      }
+      const result = await deleteMutation.mutateAsync({ sessionIds: selectedIds });
 
       toast.dismiss();
-      toast.success(`Deleted ${result.deletedCount} file(s)`);
+      toast.success(`Deleted ${result.deletedCount} practice session(s)`);
 
-      utils.files.getUserFiles.invalidate();
+      utils.practiceSessions.getUserPracticeSessions.invalidate();
       setRowSelection({});
     } catch (error) {
       toast.dismiss();
-      toast.error("Failed to delete files");
+      toast.error("Failed to delete sessions");
     }
   };
 
-  // Show skeleton if:
-  // 1. Session is being fetched
-  // 2. User ID exists but query is loading
-  // 3. User ID exists but query hasn't started yet (idle/pending state)
   const isLoading =
     isSessionPending ||
     (hasUserId && tableData.isLoading) ||
     (hasUserId && tableData.status === "pending");
 
   if (isLoading) {
-    return <UserFilesTableSkeleton />;
+    return <PracticeSessionsTableSkeleton />;
   }
 
   if (tableData.isError) {
@@ -88,7 +63,6 @@ const UserFilesTable = () => {
 
   return (
     <div className="space-y-4">
-      {/* Action Bar: Only shows when items are selected */}
       {Object.keys(rowSelection).length > 0 && (
         <div className="flex items-center justify-between bg-muted/40 p-2 px-4 rounded-md border border-border animate-in fade-in slide-in-from-top-2">
           <span className="text-sm text-muted-foreground">
@@ -112,10 +86,11 @@ const UserFilesTable = () => {
           data={tableData.data}
           rowSelection={rowSelection}
           setRowSelection={setRowSelection}
+          emptyMessage="No sessions found"
         />
       )}
     </div>
   );
 };
 
-export default UserFilesTable;
+export default PracticeSessionsTable;

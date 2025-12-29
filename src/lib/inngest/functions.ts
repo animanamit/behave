@@ -1,6 +1,6 @@
 // src/lib/inngest/functions.ts
 import { inngest } from "@/lib/inngest/inngest";
-import { generateObject } from "ai"; // Note: generateObject, NOT streamObject
+import { generateObject } from "ai";
 import { GenerateAnswersSchema } from "@/lib/zod-schemas";
 import { db } from "@/db/prisma";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
