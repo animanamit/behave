@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/layouts/site-header";
 
 interface HomeLayoutProps {
   children: React.ReactNode;
@@ -10,11 +9,9 @@ interface HomeLayoutProps {
 
 export function HomeLayout({ children }: HomeLayoutProps) {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <main className="flex-1 p-6 overflow-auto">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="min-h-screen">
+      <SiteHeader />
+      <main className="p-6">{children}</main>
+    </div>
   );
 }

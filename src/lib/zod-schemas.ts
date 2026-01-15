@@ -25,7 +25,7 @@ export const SaveFileSchema = z.object({
 
 export type SaveFileRequest = z.infer<typeof SaveFileSchema>;
 
-const UserFileSchema = z.object({
+export const UserFileSchema = z.object({
   id: z.string(),
   userId: z.string(),
   s3Key: z.string(),
@@ -36,6 +36,8 @@ const UserFileSchema = z.object({
 });
 
 export const UserFilesSchema = z.array(UserFileSchema);
+
+export type UserFile = z.infer<typeof UserFileSchema>;
 
 export type UserFilesRequestData = z.infer<typeof UserFilesSchema>;
 

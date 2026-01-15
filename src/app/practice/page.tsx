@@ -79,6 +79,7 @@ export default function PracticePage() {
               <PracticeQuestionList
                 answers={answersQuery.data}
                 onSelectAnswer={handleSelectAnswer}
+                onReviewSessions={() => {}}
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-64 space-y-6 border border-dashed border-border rounded-xl bg-muted/5">

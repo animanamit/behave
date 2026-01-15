@@ -43,10 +43,15 @@
   --destructive: #e7000b;
   --destructive-foreground: #fafafa;
 
-  /* Border: Very light, crisp borders */
+   /* Border: Very light, crisp borders */
   --border: #e5e5e5;
   --input: #e5e5e5;
   --ring: #0a0a0a; /* Rings should be high contrast when focused */
+
+  /* Semantic colors for feedback */
+  --success: #16a34a;      /* Green for scores 80%+ */
+  --info: #2563eb;         /* Blue for scores 60-79% */
+  --warning: #ca8a04;      /* Yellow for scores <60% */
 
   /* Charts: Monochromatic scaling or specific data colors */
   --chart-1: #171717;
@@ -156,6 +161,10 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
+  --color-success: var(--success);
+  --color-info: var(--info);
+  --color-warning: var(--warning);
+  --color-chart-2: var(--chart-2);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);

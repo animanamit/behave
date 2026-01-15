@@ -23,7 +23,12 @@ const extractS3Key = (url: string): string => {
 };
 
 export const transcribeVideo = inngest.createFunction(
-  { id: "transcribe-video", name: "Transcribe Video" },
+  {
+    id: "transcribe-video",
+    name: "Transcribe Video",
+    timeouts: { finish: "15m" }, // 15 min for 8-min video transcription
+    retries: 2,
+  },
   { event: "video/transcribe" },
   async ({ event, step }) => {
     const { sessionId } = event.data;
@@ -71,10 +76,25 @@ export const transcribeVideo = inngest.createFunction(
           });
 
           console.log('[transcribeVideo] Starting transcription...');
-          const transcription = await openai.audio.transcriptions.create({
-            file: file,
-            model: "whisper-1",
-          });
+
+          // Add timeout for Whisper API (12 min max for long videos)
+          const controller = new AbortController();
+          const transcriptionTimeout = setTimeout(() => controller.abort(), 12 * 60 * 1000);
+
+          let transcription;
+          try {
+            transcription = await openai.audio.transcriptions.create(
+              { file, model: "whisper-1" },
+              { signal: controller.signal }
+            );
+          } catch (err: any) {
+            if (err.name === 'AbortError') {
+              throw new Error('Transcription timed out - video may be too long');
+            }
+            throw err;
+          } finally {
+            clearTimeout(transcriptionTimeout);
+          }
 
           console.log('[transcribeVideo] Transcription complete');
           const transcriptText = transcription.text || "";
@@ -123,7 +143,12 @@ export const transcribeVideo = inngest.createFunction(
 );
 
 export const analyzeRecording = inngest.createFunction(
-  { id: "analyze-recording", name: "Analyze Recording" },
+  {
+    id: "analyze-recording",
+    name: "Analyze Recording",
+    timeouts: { finish: "5m" }, // 5 min for AI analysis
+    retries: 2,
+  },
   { event: "video/transcribed" },
   async ({ event, step }) => {
     console.log('[analyzeRecording] Received event');
@@ -146,7 +171,8 @@ export const analyzeRecording = inngest.createFunction(
         return { scriptWords, transcriptWords, duration: session.duration };
       });
 
-      await step.run("ai-analysis", async () => {
+      // Fetch session data once and reuse across steps
+      const sessionData = await step.run("fetch-session-data", async () => {
         const session = await db.practiceSession.findUnique({
           where: { id: sessionId },
           include: { answer: true },
@@ -156,6 +182,15 @@ export const analyzeRecording = inngest.createFunction(
           throw new Error("Session not found");
         }
 
+        return {
+          transcript: session.transcript,
+          fullAnswer: session.answer.fullAnswer,
+          competency: session.answer.competency,
+        };
+      });
+
+      // Run AI analysis
+      const aiResult = await step.run("ai-analysis", async () => {
         const { object } = await generateObject({
           model: "google/gemini-2.0-flash-exp",
           schema: z.object({
@@ -173,13 +208,13 @@ export const analyzeRecording = inngest.createFunction(
           prompt: `Compare this interview recording transcript to ideal STAR script and provide feedback.
 
 TRANSCRIPT:
-${session.transcript}
+${sessionData.transcript}
 
 IDEAL SCRIPT:
-${session.answer.fullAnswer}
+${sessionData.fullAnswer}
 
 COMPETENCY:
-${session.answer.competency}
+${sessionData.competency}
 
 Instructions:
 1. Score content fidelity (0-100) based on how well they covered the script
@@ -193,31 +228,34 @@ Keep feedback concise and actionable.`,
         });
 
         console.log('[analyzeRecording] AI analysis complete');
+        return object;
+      });
 
-        const wordsMatched = await step.run("count-matched-words", async () => {
-          const scriptWords = session.answer.fullAnswer.toLowerCase().split(/\s+/);
-          const transcriptWords = (session.transcript || "").toLowerCase().split(/\s+/);
-          const transcriptSet = new Set(transcriptWords);
-          const matched = scriptWords.filter((w: string) => transcriptSet.has(w)).length;
-          console.log('[analyzeRecording] Words matched:', matched, 'of', scriptWords);
-          return matched;
-        });
+      // Count matched words (flattened from nested step)
+      const wordsMatched = await step.run("count-matched-words", async () => {
+        const scriptWords = sessionData.fullAnswer.toLowerCase().split(/\s+/);
+        const transcriptWords = (sessionData.transcript || "").toLowerCase().split(/\s+/);
+        const transcriptSet = new Set(transcriptWords);
+        const matched = scriptWords.filter((w: string) => transcriptSet.has(w)).length;
+        console.log('[analyzeRecording] Words matched:', matched, 'of', scriptWords.length);
+        return matched;
+      });
 
-        await step.run("create-feedback", async () => {
-          console.log('[analyzeRecording] Creating feedback in DB...');
-          await db.sessionFeedback.create({
-            data: {
-              sessionId: sessionId,
-              contentFidelityScore: object.contentFidelityScore,
-              pacing: object.pacing,
-              confidence: object.confidence,
-              suggestions: object.suggestions,
-              wordsMatched: wordsMatched,
-              totalWords: wordCounts.scriptWords,
-              wentOffScript: object.wentOffScript,
-              offScriptImprovement: object.offScriptImprovement,
-            },
-          });
+      // Create feedback (flattened from nested step)
+      await step.run("create-feedback", async () => {
+        console.log('[analyzeRecording] Creating feedback in DB...');
+        await db.sessionFeedback.create({
+          data: {
+            sessionId: sessionId,
+            contentFidelityScore: aiResult.contentFidelityScore,
+            pacing: aiResult.pacing,
+            confidence: aiResult.confidence,
+            suggestions: aiResult.suggestions,
+            wordsMatched: wordsMatched,
+            totalWords: wordCounts.scriptWords,
+            wentOffScript: aiResult.wentOffScript,
+            offScriptImprovement: aiResult.offScriptImprovement,
+          },
         });
       });
 
