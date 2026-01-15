@@ -4,14 +4,15 @@ import { HomeLayout } from "@/components/layouts/home-layout";
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/typography";
 import { AnswersList } from "@/components/answers/answers-list";
+import { AddQuestionModal } from "@/components/answers/add-question-modal";
 import { STARAnswer } from "@/lib/zod-schemas";
 import {
   Sparkles,
   FileText,
   Loader2,
   CheckCircle2,
-  Clock,
   AlertCircle,
+  Plus,
 } from "lucide-react";
 import { useState, useCallback, useEffect, useEffectEvent } from "react";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ const AnswersPage = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [eventId, setEventId] = useState<string | null>(null);
   const [streamingAnswers, setStreamingAnswers] = useState<STARAnswer[]>([]);
+  const [isAddQuestionOpen, setIsAddQuestionOpen] = useState(false);
 
   // File Selection State
   const { data: session } = authClient.useSession();
@@ -259,27 +261,40 @@ const AnswersPage = () => {
 
           {/* Step 2: Action Area */}
           <div className="flex flex-col items-start gap-4">
-            <Button
-              onClick={startGeneration}
-              disabled={isGenerating || !selectedFileId}
-              size="lg"
-              className={cn(
-                "w-full md:w-auto min-w-[200px] transition-all",
-                isGenerating ? "opacity-80" : "shadow-sm hover:shadow-md"
-              )}
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Crafting Answers...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  {hasAnswers ? "Regenerate All Answers" : "Generate Answers"}
-                </>
-              )}
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              <Button
+                onClick={startGeneration}
+                disabled={isGenerating || !selectedFileId}
+                size="lg"
+                className={cn(
+                  "w-full md:w-auto min-w-[200px] transition-all",
+                  isGenerating ? "opacity-80" : "shadow-sm hover:shadow-md"
+                )}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Crafting Answers...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    {hasAnswers ? "Regenerate All Answers" : "Generate Answers"}
+                  </>
+                )}
+              </Button>
+
+              <Button
+                onClick={() => setIsAddQuestionOpen(true)}
+                variant="outline"
+                size="lg"
+                disabled={isGenerating}
+                className="w-full md:w-auto"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Question
+              </Button>
+            </div>
 
             {!selectedFileId && !isGenerating && (
               <p className="text-sm text-muted-foreground flex items-center gap-2">
@@ -347,6 +362,12 @@ const AnswersPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Add Question Modal */}
+      <AddQuestionModal
+        open={isAddQuestionOpen}
+        onOpenChange={setIsAddQuestionOpen}
+      />
     </HomeLayout>
   );
 };

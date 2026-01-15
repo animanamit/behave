@@ -121,6 +121,17 @@ export const GenerateAnswersSchema = z.object({
 export type STARAnswer = z.infer<typeof STARAnswerSchema>;
 export type GenerateAnswersResponse = z.infer<typeof GenerateAnswersSchema>;
 
+/**
+ * Schema for creating a single question with AI-generated STAR script.
+ */
+export const CreateSingleQuestionSchema = z.object({
+  question: z.string().min(10, "Question must be at least 10 characters"),
+  fileId: z.string().uuid("Select a document for context"),
+  competency: z.string().optional(),
+});
+
+export type CreateSingleQuestionRequest = z.infer<typeof CreateSingleQuestionSchema>;
+
 // ------------------------------------------------------------------
 // PRACTICE SESSION SCHEMAS
 // ------------------------------------------------------------------
