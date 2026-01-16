@@ -127,7 +127,7 @@ export type GenerateAnswersResponse = z.infer<typeof GenerateAnswersSchema>;
 export const CreateSingleQuestionSchema = z.object({
   question: z.string().min(10, "Question must be at least 10 characters"),
   fileId: z.string().uuid("Select a document for context"),
-  competency: z.string().optional(),
+  competency: z.string(),
 });
 
 export type CreateSingleQuestionRequest = z.infer<typeof CreateSingleQuestionSchema>;

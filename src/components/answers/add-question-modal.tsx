@@ -78,7 +78,7 @@ export function AddQuestionModal({ open, onOpenChange }: AddQuestionModalProps) 
       await createAnswerMutation.mutateAsync({
         question: value.question,
         fileId: value.fileId,
-        competency: value.competency || undefined,
+        competency: value.competency,
       });
     },
   });
