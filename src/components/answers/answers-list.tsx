@@ -48,6 +48,8 @@ export function AnswersList({
               key={idx}
               onClick={() => onSelectAnswer?.(answer)}
               className={cn(
+                // Performance: content-visibility CSS in globals.css
+                "answer-card",
                 // Animation: Smooth fade in and slide up when a new card appears
                 "animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out overflow-hidden transition-all",
                 // Styling:

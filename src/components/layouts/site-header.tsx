@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 import { authClient } from "@/lib/auth-client";
 import SignOutButton from "@/components/auth/sign-out-button";
 import { User } from "lucide-react";
@@ -13,8 +16,23 @@ const navItems = [
   { title: "Answers", href: "/answers" },
 ];
 
+/**
+ * Site Header with navigation.
+ *
+ * Uses prefetch on hover for faster perceived navigation.
+ * See revisions.md for explanation of preloading on user intent.
+ */
 export function SiteHeader() {
   const { data: session } = authClient.useSession();
+  const router = useRouter();
+
+  // Prefetch route when user hovers - page loads before they click
+  const handlePrefetch = useCallback(
+    (href: string) => {
+      router.prefetch(href);
+    },
+    [router]
+  );
 
   return (
     <header className="border-b border-border px-6 flex justify-between items-center bg-background sticky top-0 z-50 h-16">
@@ -27,6 +45,8 @@ export function SiteHeader() {
             <Link
               key={item.href}
               href={item.href}
+              onMouseEnter={() => handlePrefetch(item.href)}
+              onFocus={() => handlePrefetch(item.href)}
               className="font-sans text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               {item.title}

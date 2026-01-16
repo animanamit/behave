@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Play, History } from "lucide-react";
 import { STARAnswer } from "@/lib/zod-schemas";
+
+/**
+ * Preload the PracticeSession component on hover.
+ * This triggers the dynamic import before the user clicks,
+ * so the component is ready when they start practicing.
+ * See revisions.md for explanation.
+ */
+const preloadPracticeSession = () => {
+  import("@/components/practice/practice-session");
+};
 
 interface PracticeQuestionListProps {
   answers: STARAnswer[];
@@ -94,6 +104,8 @@ export function PracticeQuestionList({
                     variant="default"
                     size="sm"
                     className="flex-1 gap-1 text-xs"
+                    onMouseEnter={preloadPracticeSession}
+                    onFocus={preloadPracticeSession}
                     onClick={() => {
                       onSelectAnswer(answer);
                     }}

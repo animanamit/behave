@@ -22,6 +22,9 @@ const t = initTRPC.context<Context>().create({
 
 export const createTRPCRouter = t.router;
 
+// Create caller factory for server-side usage
+export const createCallerFactory = t.createCallerFactory;
+
 export const publicProcedure = t.procedure;
 
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {

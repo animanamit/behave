@@ -1,6 +1,5 @@
 // src/app/api/answers-stream/route.ts
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getCurrentSession } from "@/lib/cached-auth";
 import { db } from "@/db/prisma";
 
 const POLL_INTERVAL_MS = 500; // Poll DB every 500ms to catch answers as they're saved
@@ -105,9 +104,8 @@ function ensureChannel(userId: string) {
  * This mimics real-time behavior for the client while using a standard DB.
  */
 export async function GET(req: Request) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  // Use cached auth for efficiency - see revisions.md
+  const session = await getCurrentSession();
 
   if (!session?.user.id) {
     return new Response("Unauthorized", { status: 401 });

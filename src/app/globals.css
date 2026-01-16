@@ -207,3 +207,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Performance: Skip rendering off-screen answer cards
+   This tells the browser to not paint cards until they're close to viewport.
+   Significantly improves initial render time for long lists (25+ items).
+   See revisions.md for detailed explanation. */
+.answer-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 250px;
+}
