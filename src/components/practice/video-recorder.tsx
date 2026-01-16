@@ -2,7 +2,6 @@
 
 import { Video, VideoOff, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Text } from "@/components/ui/typography";
 import { memo } from "react";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +27,7 @@ export const VideoRecorder = memo(function VideoRecorder({
   isMicOn,
 }: VideoRecorderProps) {
   return (
-    <div className="relative flex-1 bg-black rounded-lg border border-border overflow-hidden">
+    <div className="relative flex-1 bg-foreground/95 rounded-xl overflow-hidden">
       <video
         ref={webcamRef}
         autoPlay
@@ -36,53 +35,52 @@ export const VideoRecorder = memo(function VideoRecorder({
         muted
         className="w-full h-full object-contain transform scale-x-[-1]"
       />
-      
+
+      {/* Countdown overlay */}
       {countdown !== null && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm">
           <div className="text-8xl font-bold text-white animate-pulse">
             {countdown}
           </div>
         </div>
       )}
 
+      {/* Recording indicator */}
       {isRecording && (
-        <div className="absolute top-4 left-4 flex items-center gap-2 bg-destructive text-destructive-foreground px-3 py-1.5 text-xs font-medium font-mono uppercase tracking-wider animate-pulse rounded-full">
-          <div className="w-2 h-2 bg-current rounded-full" />
+        <div className="absolute top-4 left-4 flex items-center gap-2 bg-destructive text-white px-4 py-2 text-sm font-medium rounded-full animate-pulse">
+          <span className="w-2.5 h-2.5 bg-white rounded-full animate-pulse" />
           Recording
         </div>
       )}
 
-      {(isCameraReady || isRecording) && countdown === null && (
-        <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white px-3 py-1 font-mono text-sm rounded-full border border-white/10">
-          00:00
-        </div>
-      )}
-
+      {/* Camera/Mic controls */}
       {isCameraReady && countdown === null && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/50 backdrop-blur-md p-2 rounded-full border border-white/10">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 backdrop-blur-md p-2 rounded-full border border-white/10">
           <Button
             size="icon"
             variant="ghost"
             onClick={onToggleCamera}
-            className="text-white hover:text-white hover:bg-white/20 rounded-full h-10 w-10"
-          >
-            {isCameraOn ? (
-              <Video className="w-5 h-5" />
-            ) : (
-              <VideoOff className="w-5 h-5" />
+            className={cn(
+              "rounded-full h-10 w-10 transition-colors",
+              isCameraOn
+                ? "text-white hover:text-white hover:bg-white/20"
+                : "text-red-400 hover:text-red-400 hover:bg-red-500/20"
             )}
+          >
+            {isCameraOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
           </Button>
           <Button
             size="icon"
             variant="ghost"
             onClick={onToggleMic}
-            className="text-white hover:text-white hover:bg-white/20 rounded-full h-10 w-10"
-          >
-            {isMicOn ? (
-              <Mic className="w-5 h-5" />
-            ) : (
-              <MicOff className="w-5 h-5" />
+            className={cn(
+              "rounded-full h-10 w-10 transition-colors",
+              isMicOn
+                ? "text-white hover:text-white hover:bg-white/20"
+                : "text-red-400 hover:text-red-400 hover:bg-red-500/20"
             )}
+          >
+            {isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
           </Button>
         </div>
       )}

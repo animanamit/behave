@@ -3,20 +3,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { STARAnswer } from "@/lib/zod-schemas";
+import Link from "next/link";
 
-// -------------------------------------------------------------------------
-// PROPS DEFINITION
-// -------------------------------------------------------------------------
-// Simplified to just accept an array of answers.
-// The parent component handles the merging of streaming + completed data.
 interface AnswersListProps {
-  answers: STARAnswer[]; // The merged list of all answers (streaming + completed)
-  isLoading: boolean; // Whether the "Daisy Chain" process is still active
+  answers: STARAnswer[];
+  isLoading: boolean;
   onSelectAnswer?: (answer: STARAnswer) => void;
-  showContent?: boolean; // Whether to show the full STAR content or just the question
+  showContent?: boolean;
+  practicedIds?: Set<string>; // IDs of answers that have been practiced
 }
 
 export function AnswersList({
@@ -24,164 +22,125 @@ export function AnswersList({
   isLoading,
   onSelectAnswer,
   showContent = true,
+  practicedIds = new Set(),
 }: AnswersListProps) {
   return (
-    <div className="space-y-8">
-      {/* 
-        NOTE: The sticky progress bar has been removed as requested 
-        to reduce visual noise and layout shift. 
-        Progress is now handled via the Toast notification in page.tsx.
-      */}
+    <div className="space-y-4">
+      {answers.map((answer, idx) => {
+        const isActive = isLoading && idx === answers.length - 1;
+        const isPracticed = practicedIds.has(String(answer.id));
 
-      {/* Answers List Container */}
-      <div className="space-y-6">
-        {answers.map((answer, idx) => {
-          // -------------------------------------------------------------------------
-          // ACTIVE CARD DETECTION
-          // -------------------------------------------------------------------------
-          // The "active" card is the very last one in the list IF we are currently loading.
-          // This gets the "typing" animation styling.
-          const isActive = isLoading && idx === answers.length - 1;
+        const staggerClass = idx < 8 ? `stagger-${idx + 1}` : "";
 
-          return (
-            <Card
-              key={idx}
-              onClick={() => onSelectAnswer?.(answer)}
-              className={cn(
-                // Performance: content-visibility CSS in globals.css
-                "answer-card",
-                // Animation: Smooth fade in and slide up when a new card appears
-                "animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out overflow-hidden transition-all",
-                // Styling:
-                // If active: Blue border + Glow + Shadow (User feedback for "I'm working here")
-                // If static: Borderless with subtle background hover
-                isActive
-                  ? "border-primary/50 shadow-lg ring-1 ring-primary/20 bg-primary/5"
-                  : "border-0 shadow-none bg-transparent hover:bg-muted/20",
-                onSelectAnswer &&
-                  "cursor-pointer hover:border-primary/50 hover:bg-muted/30"
-              )}
-            >
-              <CardHeader className="pb-3 pl-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {/* Index Badge (e.g., #1, #2) */}
-                    <Badge
-                      variant="secondary"
-                      className="bg-muted text-muted-foreground"
-                    >
-                      #{answer.id || idx + 1}
+        return (
+          <Card
+            key={idx}
+            onClick={() => onSelectAnswer?.(answer)}
+            className={cn(
+              "answer-card overflow-hidden transition-colors duration-200 stagger-item",
+              staggerClass,
+              isActive
+                ? "border-accent/30 bg-accent/5"
+                : "hover:bg-secondary/30",
+              onSelectAnswer && "cursor-pointer"
+            )}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-light text-muted-foreground/40 tabular-nums">
+                    {String(idx + 1).padStart(2, "0")}
+                  </span>
+                  <Badge variant="outline">{answer?.competency || "..."}</Badge>
+                  {isPracticed && (
+                    <Badge variant="success" size="sm">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      Practiced
                     </Badge>
-                    {/* Competency Badge (e.g., Leadership) */}
-                    <Badge
-                      variant="outline"
-                      className="border-muted-foreground/20"
-                    >
-                      {answer?.competency || "Thinking..."}
-                    </Badge>
-                  </div>
-                  {/* 
-                    Checkmark Indicator:
-                    Only shows when the 'result' field (the final field) has content,
-                    indicating the answer is likely fully generated.
-                  */}
-                  {answer?.result && (
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
                   )}
                 </div>
-                {/* Question Title */}
-                <CardTitle className="text-lg mt-2 leading-snug">
-                  {answer?.question || <Skeleton className="h-6 w-3/4" />}
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent
-                className={cn("pt-2 pl-0", showContent ? "space-y-6" : "pb-0")}
-              >
-                {showContent ? (
-                  <>
-                    {/* 
-                      STAR SECTIONS
-                      Each section (Situation, Task, Action, Result) follows the same pattern:
-                      - Small uppercase label
-                      - Content div (uses div instead of p to allow Skeletons inside without hydration errors)
-                      - Skeleton fallback if content is missing
-                    */}
-
-                    {/* Situation - GREEN */}
-                    <div className="space-y-1.5">
-                      <h4 className="font-bold uppercase tracking-wider text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-                        Situation
-                      </h4>
-                      <div className="text-sm leading-relaxed text-foreground/90">
-                        {answer?.situation || (
-                          <Skeleton className="h-4 w-full" />
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Task - BLUE */}
-                    <div className="space-y-1.5">
-                      <h4 className="font-bold uppercase tracking-wider text-xs text-blue-600 dark:text-blue-400 flex items-center gap-2">
-                        Task
-                      </h4>
-                      <div className="text-sm leading-relaxed text-foreground/90">
-                        {answer?.task || <Skeleton className="h-4 w-full" />}
-                      </div>
-                    </div>
-
-                    {/* Action - AMBER/YELLOW */}
-                    <div className="space-y-1.5">
-                      <h4 className="font-bold uppercase tracking-wider text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2">
-                        Action
-                      </h4>
-                      <div className="text-sm leading-relaxed text-foreground/90">
-                        {answer?.action || <Skeleton className="h-4 w-full" />}
-                      </div>
-                    </div>
-
-                    {/* Result - RED/ROSE */}
-                    <div className="space-y-1.5">
-                      <h4 className="font-bold uppercase tracking-wider text-xs text-rose-600 dark:text-rose-400 flex items-center gap-2">
-                        Result
-                      </h4>
-                      <div className="text-sm leading-relaxed font-medium text-foreground">
-                        {answer?.result || <Skeleton className="h-4 w-full" />}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="hidden" />
+                {answer?.result && !isPracticed && (
+                  <Link
+                    href={`/practice?id=${answer.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Button variant="outline" size="sm">
+                      <Play className="w-3 h-3 mr-1" />
+                      Practice
+                    </Button>
+                  </Link>
                 )}
-              </CardContent>
-            </Card>
-          );
-        })}
-
-        {/* 
-          INITIAL LOADING SKELETON
-          Only displayed when we have ZERO answers and are in the loading state.
-          Ideally, the first stream chunk arrives so fast this is rarely seen,
-          but it provides immediate feedback on the very first click.
-        */}
-        {isLoading && answers.length === 0 && (
-          <Card className="border-0 shadow-none opacity-60 animate-pulse">
-            <CardHeader className="pb-3 pl-0">
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-5 w-8" />
-                <Skeleton className="h-5 w-24" />
               </div>
-              <Skeleton className="h-6 w-1/2 mt-2" />
+              <CardTitle className="text-base mt-3 leading-snug font-medium">
+                {answer?.question || <Skeleton className="h-5 w-3/4" />}
+              </CardTitle>
             </CardHeader>
-            <CardContent className="pt-2 pl-0 space-y-4">
-              <div className="space-y-2">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-4 w-full" />
-              </div>
-            </CardContent>
+
+            {showContent && (
+              <CardContent className="pt-0 space-y-4">
+                {/* Situation */}
+                <div className="space-y-1.5">
+                  <Badge variant="situation" size="sm">
+                    Situation
+                  </Badge>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {answer?.situation || <Skeleton className="h-4 w-full" />}
+                  </p>
+                </div>
+
+                {/* Task */}
+                <div className="space-y-1.5">
+                  <Badge variant="task" size="sm">
+                    Task
+                  </Badge>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {answer?.task || <Skeleton className="h-4 w-full" />}
+                  </p>
+                </div>
+
+                {/* Action */}
+                <div className="space-y-1.5">
+                  <Badge variant="action" size="sm">
+                    Action
+                  </Badge>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {answer?.action || <Skeleton className="h-4 w-full" />}
+                  </p>
+                </div>
+
+                {/* Result */}
+                <div className="space-y-1.5">
+                  <Badge variant="result" size="sm">
+                    Result
+                  </Badge>
+                  <p className="text-sm leading-relaxed text-foreground font-medium">
+                    {answer?.result || <Skeleton className="h-4 w-full" />}
+                  </p>
+                </div>
+              </CardContent>
+            )}
           </Card>
-        )}
-      </div>
+        );
+      })}
+
+      {/* Initial loading skeleton */}
+      {isLoading && answers.length === 0 && (
+        <Card className="opacity-60 animate-pulse">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-8" />
+              <Skeleton className="h-5 w-24" />
+            </div>
+            <Skeleton className="h-5 w-1/2 mt-3" />
+          </CardHeader>
+          <CardContent className="pt-0 space-y-4">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

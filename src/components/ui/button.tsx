@@ -6,20 +6,16 @@ import { cn } from "@/lib/utils"
 
 /*
   DESIGN SYSTEM - BUTTON
-  
-  Modifications for Minimal/Lexiconic Style:
-  - Shape: Reduced roundedness to match strict grid feel.
-  - Primary: Solid high-contrast (black/white).
-  - Outline: Crisp 1px border, no background until hover.
-  - Ghost: Pure text/icon, subtle hover.
-  
-  Usage:
-  <Button variant="default">Action</Button>
-  <Button variant="outline">Secondary</Button>
+
+  Soft Minimal + Flat Style:
+  - Rounded corners (8px default)
+  - No shadows, flat design
+  - Smooth transitions
+  - Clear hover/active states
 */
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none text-sm font-normal transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 active:scale-[0.98]",
   {
     variants: {
       variant: {
@@ -28,17 +24,23 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-border/60 bg-background hover:bg-secondary",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        ghost:
+          "hover:bg-secondary hover:text-foreground",
+        link:
+          "text-accent underline-offset-4 hover:underline",
+        accent:
+          "bg-accent text-accent-foreground hover:bg-accent/90",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-none px-3 text-xs",
-        lg: "h-10 rounded-none px-8",
-        icon: "h-9 w-9",
+        default: "h-10 px-4 py-2 rounded-lg",
+        sm: "h-8 px-3 text-xs rounded-md",
+        lg: "h-12 px-6 text-base rounded-lg",
+        xl: "h-14 px-8 text-base rounded-xl",
+        icon: "h-10 w-10 rounded-lg",
+        "icon-sm": "h-8 w-8 rounded-md",
       },
     },
     defaultVariants: {

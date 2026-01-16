@@ -3,89 +3,98 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* 
-  DESIGN SYSTEM NOTES:
-  This file defines the core visual variables for the application.
-  To modify the design system, adjust the variables in :root and .dark.
+/*
+  DESIGN SYSTEM: Soft Minimal + Airy Flat
+
+  Key principles:
+  - Warm off-whites instead of pure white
+  - Softer blacks for better eye comfort
+  - Subtle shadows that lift without harsh edges
+  - Rounded corners (12px base) for friendly feel
+  - Accent colors with subtle glow effects
 */
 
 :root {
-  /* Background & Foreground: High contrast black on white */
-  --background: #ffffff;
-  --foreground: #0a0a0a;
+  /* Background & Foreground: Warm and easy on the eyes */
+  --background: #fafaf8;
+  --foreground: #1a1a1a;
 
-  /* Card: Minimal, usually same as bg or very subtle off-white */
+  /* Card: Slightly elevated from background */
   --card: #ffffff;
-  --card-foreground: #0a0a0a;
+  --card-foreground: #1a1a1a;
 
-  /* Popover: Used for dropdowns, dialogs */
+  /* Popover: Clean white for dropdowns, dialogs */
   --popover: #ffffff;
-  --popover-foreground: #0a0a0a;
+  --popover-foreground: #1a1a1a;
 
-  /* Primary: The main action color. 
-     For Lexiconic style: Solid Black (#171717) or very dark grey */
-  --primary: #171717;
-  --primary-foreground: #fafafa;
+  /* Primary: Dark for confident actions */
+  --primary: #1a1a1a;
+  --primary-foreground: #ffffff;
 
-  /* Secondary: Used for secondary actions, backgrounds of muted items */
-  --secondary: #f5f5f5;
-  --secondary-foreground: #171717;
+  /* Secondary: Soft gray for secondary actions */
+  --secondary: #f3f3f1;
+  --secondary-foreground: #1a1a1a;
 
-  /* Muted: For disabled text, placeholders, less important info */
-  --muted: #f5f5f5;
+  /* Muted: For disabled text, placeholders */
+  --muted: #f3f3f1;
   --muted-foreground: #737373;
 
-  /* Accent: For hover states, highlighted items */
-  --accent: #f5f5f5;
-  --accent-foreground: #171717;
+  /* Accent: Blue for highlights and interactive elements */
+  --accent: #3b82f6;
+  --accent-foreground: #ffffff;
+  --accent-glow: rgba(59, 130, 246, 0.15);
 
   /* Destructive: Errors and dangerous actions */
-  --destructive: #e7000b;
-  --destructive-foreground: #fafafa;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
 
-   /* Border: Very light, crisp borders */
-  --border: #e5e5e5;
-  --input: #e5e5e5;
-  --ring: #0a0a0a; /* Rings should be high contrast when focused */
+  /* Border: Very subtle, almost invisible */
+  --border: rgba(0, 0, 0, 0.04);
+  --input: rgba(0, 0, 0, 0.06);
+  --ring: #3b82f6;
 
   /* Semantic colors for feedback */
-  --success: #16a34a;      /* Green for scores 80%+ */
-  --info: #2563eb;         /* Blue for scores 60-79% */
-  --warning: #ca8a04;      /* Yellow for scores <60% */
+  --success: #22c55e;
+  --success-glow: rgba(34, 197, 94, 0.12);
+  --info: #3b82f6;
+  --info-glow: rgba(59, 130, 246, 0.12);
+  --warning: #f59e0b;
+  --warning-glow: rgba(245, 158, 11, 0.12);
 
-  /* Charts: Monochromatic scaling or specific data colors */
-  --chart-1: #171717;
-  --chart-2: #404040;
+  /* STAR section colors (softer) */
+  --star-situation: #10b981;
+  --star-situation-bg: #ecfdf5;
+  --star-task: #3b82f6;
+  --star-task-bg: #eff6ff;
+  --star-action: #f59e0b;
+  --star-action-bg: #fffbeb;
+  --star-result: #ec4899;
+  --star-result-bg: #fdf2f8;
+
+  /* Charts: Soft progression */
+  --chart-1: #1a1a1a;
+  --chart-2: #525252;
   --chart-3: #737373;
   --chart-4: #a3a3a3;
   --chart-5: #d4d4d4;
 
-  /* Radius: 0rem for brutalist, 0.25rem for "sharp but friendly"
-     Lexiconic uses very sharp edges. */
-  --radius: 0rem;
+  /* Radius: Friendly rounded corners */
+  --radius: 0.75rem;
 
-  /* Sidebar variables (if used) */
-  --sidebar: #fafafa;
-  --sidebar-foreground: #0a0a0a;
-  --sidebar-primary: #171717;
-  --sidebar-primary-foreground: #fafafa;
-  --sidebar-accent: #f5f5f5;
-  --sidebar-accent-foreground: #171717;
-  --sidebar-border: #e5e5e5;
-  --sidebar-ring: #a1a1a1;
-
-  /* Shadows: Kept minimal or removed entirely in the component overrides */
-  --shadow-x: 0px;
-  --shadow-y: 1px;
-  --shadow-blur: 2px;
-  --shadow-spread: 0px;
-  --shadow-opacity: 0.05;
-  --shadow-color: #000000;
+  /* Sidebar variables */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #1a1a1a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f3f1;
+  --sidebar-accent-foreground: #1a1a1a;
+  --sidebar-border: rgba(0, 0, 0, 0.06);
+  --sidebar-ring: #3b82f6;
 }
 
 .dark {
-  /* Dark Mode: Deep black/gray scale */
-  --background: #0a0a0a;
+  /* Dark Mode: Deep, comfortable darks */
+  --background: #0f0f0f;
   --foreground: #fafafa;
 
   --card: #171717;
@@ -103,15 +112,32 @@
   --muted: #262626;
   --muted-foreground: #a3a3a3;
 
-  --accent: #262626;
-  --accent-foreground: #fafafa;
+  --accent: #60a5fa;
+  --accent-foreground: #171717;
+  --accent-glow: rgba(96, 165, 250, 0.2);
 
-  --destructive: #ff6467;
-  --destructive-foreground: #262626;
+  --destructive: #f87171;
+  --destructive-foreground: #171717;
 
-  --border: #262626;
-  --input: #262626;
-  --ring: #d4d4d4;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #60a5fa;
+
+  --success: #4ade80;
+  --success-glow: rgba(74, 222, 128, 0.15);
+  --info: #60a5fa;
+  --info-glow: rgba(96, 165, 250, 0.15);
+  --warning: #fbbf24;
+  --warning-glow: rgba(251, 191, 36, 0.15);
+
+  --star-situation: #34d399;
+  --star-situation-bg: rgba(52, 211, 153, 0.1);
+  --star-task: #60a5fa;
+  --star-task-bg: rgba(96, 165, 250, 0.1);
+  --star-action: #fbbf24;
+  --star-action-bg: rgba(251, 191, 36, 0.1);
+  --star-result: #f472b6;
+  --star-result-bg: rgba(244, 114, 182, 0.1);
 
   --chart-1: #fafafa;
   --chart-2: #d4d4d4;
@@ -125,22 +151,16 @@
   --sidebar-primary-foreground: #171717;
   --sidebar-accent: #262626;
   --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #262626;
-  --sidebar-ring: #525252;
-
-  --shadow-color: #000000;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #60a5fa;
 }
 
 @theme inline {
-  /* 
-    TYPOGRAPHY SYSTEM:
-    - font-sans: Geist Sans (Headings & Body)
-    - font-mono: Geist Mono (Data & Code)
-  */
-  --font-serif: var(--font-sans), sans-serif; /* Remap serif to sans */
-  --font-mono: var(--font-mono), monospace;
-  --font-sans: var(--font-sans), sans-serif;
+  /* Typography */
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
 
+  /* Colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -160,19 +180,28 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
+
+  /* Semantic */
   --color-success: var(--success);
   --color-info: var(--info);
   --color-warning: var(--warning);
-  --color-chart-2: var(--chart-2);
+
+  /* Charts */
+  --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  /* Radius scale */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-full: 9999px;
+
+  /* Sidebar */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -181,22 +210,6 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-
-  /* Shadow definitions */
-  --shadow-2xs: var(--shadow-x) var(--shadow-y) color-mix(in srgb, var(--shadow-color) calc(var(--shadow-opacity) * 100%), transparent);
-  --shadow-xs: var(--shadow-x) var(--shadow-y) var(--shadow-blur) var(--shadow-spread) color-mix(in srgb, var(--shadow-color) calc(var(--shadow-opacity) * 100%), transparent);
-  --shadow-sm: var(--shadow-x) var(--shadow-y) calc(var(--shadow-blur) * 1.5) var(--shadow-spread) color-mix(in srgb, var(--shadow-color) calc(var(--shadow-opacity) * 100%), transparent);
-  --shadow-md: calc(var(--shadow-x) * 2) calc(var(--shadow-y) * 2) calc(var(--shadow-blur) * 3) calc(var(--shadow-spread) - 1px) color-mix(in srgb, var(--shadow-color) calc(var(--shadow-opacity) * 100%), transparent);
-  --shadow-lg: calc(var(--shadow-x) * 4) calc(var(--shadow-y) * 4) calc(var(--shadow-blur) * 5) calc(var(--shadow-spread) - 3px) color-mix(in srgb, var(--shadow-color) calc(var(--shadow-opacity) * 100%), transparent);
-  --shadow-xl: calc(var(--shadow-x) * 6) calc(var(--shadow-y) * 6) calc(var(--shadow-blur) * 7) calc(var(--shadow-spread) - 5px) color-mix(in srgb, var(--shadow-color) calc(var(--shadow-opacity) * 100%), transparent);
-  --shadow-2xl: calc(var(--shadow-x) * 8) calc(var(--shadow-y) * 8) calc(max(0px, var(--shadow-blur) * 9 - 8px)) calc(var(--shadow-spread) - 12px) color-mix(in srgb, var(--shadow-color) calc(var(--shadow-opacity) * 250%), transparent);
-  --shadow: var(--shadow-md);
-  --color-shadow-color: var(--shadow-color);
-  --shadow-opacity: var(--shadow-opacity);
-  --shadow-spread: var(--shadow-spread);
-  --shadow-blur: var(--shadow-blur);
-  --shadow-y: var(--shadow-y);
-  --shadow-x: var(--shadow-x);
 }
 
 @layer base {
@@ -208,11 +221,234 @@
   }
 }
 
-/* Performance: Skip rendering off-screen answer cards
-   This tells the browser to not paint cards until they're close to viewport.
-   Significantly improves initial render time for long lists (25+ items).
-   See revisions.md for detailed explanation. */
+/* Utility classes for glow effects */
+.glow-success {
+  box-shadow: 0 0 20px var(--success-glow);
+}
+
+.glow-info {
+  box-shadow: 0 0 20px var(--info-glow);
+}
+
+.glow-warning {
+  box-shadow: 0 0 20px var(--warning-glow);
+}
+
+.glow-accent {
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* Score text glow */
+.score-excellent {
+  color: var(--success);
+  text-shadow: 0 0 20px var(--success-glow);
+}
+
+.score-good {
+  color: var(--info);
+  text-shadow: 0 0 20px var(--info-glow);
+}
+
+.score-needs-work {
+  color: var(--warning);
+  text-shadow: 0 0 20px var(--warning-glow);
+}
+
+/* Performance: Skip rendering off-screen cards */
 .answer-card {
   content-visibility: auto;
   contain-intrinsic-size: 0 250px;
+}
+
+/* ================================
+   ANIMATIONS & TRANSITIONS
+   ================================ */
+
+/* Smooth page transitions */
+.page-transition {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide up animation for cards */
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade in animation */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Scale in animation for overlays */
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Staggered list animation helper */
+.stagger-item {
+  opacity: 0;
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+.stagger-1 { animation-delay: 0ms; }
+.stagger-2 { animation-delay: 50ms; }
+.stagger-3 { animation-delay: 100ms; }
+.stagger-4 { animation-delay: 150ms; }
+.stagger-5 { animation-delay: 200ms; }
+.stagger-6 { animation-delay: 250ms; }
+.stagger-7 { animation-delay: 300ms; }
+.stagger-8 { animation-delay: 350ms; }
+
+/* Smooth focus transitions */
+.focus-ring {
+  @apply transition-shadow duration-200;
+}
+
+.focus-ring:focus-visible {
+  @apply ring-2 ring-ring ring-offset-2 ring-offset-background;
+}
+
+/* Card hover effect - subtle background change */
+.hover-lift {
+  @apply transition-colors duration-200;
+}
+
+.hover-lift:hover {
+  @apply bg-secondary/30;
+}
+
+/* Subtle pulse for recording indicator */
+@keyframes subtlePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-subtle-pulse {
+  animation: subtlePulse 2s ease-in-out infinite;
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 0%,
+    var(--secondary) 50%,
+    var(--muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Score ring animation */
+@keyframes scoreRingFill {
+  from {
+    stroke-dashoffset: 251.2;
+  }
+}
+
+.animate-score-ring {
+  animation: scoreRingFill 1s ease-out forwards;
+}
+
+/* Bounce in for success states */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-bounce-in {
+  animation: bounceIn 0.5s ease-out forwards;
+}
+
+/* Smooth number transitions for scores */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Button press effect */
+.press-effect {
+  @apply transition-transform duration-100;
+}
+
+.press-effect:active {
+  @apply scale-[0.98];
+}
+
+/* Smooth opacity transitions for visibility */
+.fade-transition {
+  @apply transition-opacity duration-200;
+}
+
+/* Progress bar fill animation */
+@keyframes progressFill {
+  from {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  to {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}
+
+.animate-progress {
+  animation: progressFill 0.5s ease-out forwards;
 }

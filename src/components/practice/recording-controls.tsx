@@ -1,18 +1,18 @@
 "use client";
 
-import { Play, Square, RotateCcw, Save, Loader2, CheckCircle2 } from "lucide-react";
+import { Play, Square, RotateCcw, Save, Loader2, CheckCircle2, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Text } from "@/components/ui/typography";
 import { memo } from "react";
+import { cn } from "@/lib/utils";
 
-type RecordingState = 
-  | 'idle' 
-  | 'camera_ready' 
-  | 'countdown' 
-  | 'recording' 
-  | 'review' 
-  | 'saving' 
-  | 'saved';
+type RecordingState =
+  | "idle"
+  | "camera_ready"
+  | "countdown"
+  | "recording"
+  | "review"
+  | "saving"
+  | "saved";
 
 interface RecordingControlsProps {
   recordingState: RecordingState;
@@ -38,92 +38,98 @@ export const RecordingControls = memo(function RecordingControls({
   isSaving,
 }: RecordingControlsProps) {
   return (
-    <div className="relative h-24 border border-border bg-card rounded-xl flex items-center justify-center shadow-sm w-full max-w-lg mx-auto px-8">
-      
-      {recordingState === 'idle' && (
-        <Button
-          size="lg"
-          onClick={onStartCamera}
-          className="rounded-full w-20 h-20 bg-primary hover:bg-primary/90 text-white"
-        >
-          <div className="w-8 h-8 bg-white rounded-sm" />
+    <div className="relative border border-border/40 bg-card rounded-xl p-6 flex flex-col items-center justify-center min-h-[120px]">
+      {/* Timer display when recording */}
+      {recordingState === "recording" && (
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-foreground text-background px-5 py-2 rounded-full font-mono text-lg font-medium">
+          {formatTime(timer)}
+        </div>
+      )}
+
+      {/* Idle - Start camera */}
+      {recordingState === "idle" && (
+        <Button size="xl" onClick={onStartCamera} className="gap-3">
+          <Camera className="w-5 h-5" />
+          Start Camera
         </Button>
       )}
 
-      {recordingState === 'camera_ready' && (
-        <Button
-          size="lg"
+      {/* Camera ready - Start recording */}
+      {recordingState === "camera_ready" && (
+        <button
           onClick={onStartRecording}
-          className="rounded-full w-20 h-20 bg-red-500 hover:bg-red-600 text-white border-4 border-red-100 shadow-xl hover:scale-105 transition-all"
+          className="w-20 h-20 rounded-full bg-destructive hover:bg-destructive/90 text-white flex items-center justify-center hover:scale-105 transition-all ring-4 ring-destructive/10"
         >
-          <div className="w-8 h-8 bg-current rounded-sm" />
-        </Button>
+          <div className="w-7 h-7 bg-white rounded-sm" />
+        </button>
       )}
 
-      {recordingState === 'countdown' && (
-        <div className="text-4xl font-bold text-red-500 animate-pulse">
+      {/* Countdown */}
+      {recordingState === "countdown" && (
+        <div className="text-3xl font-bold text-destructive animate-pulse">
           Get Ready...
         </div>
       )}
 
-      {recordingState === 'recording' && (
-        <Button
-          size="lg"
+      {/* Recording - Stop button */}
+      {recordingState === "recording" && (
+        <button
           onClick={onStopRecording}
-          className="rounded-full w-20 h-20 bg-white text-red-500 border-4 border-red-100 shadow-xl hover:scale-105 transition-all"
+          className="w-20 h-20 rounded-full bg-white border-4 border-destructive/20 text-destructive flex items-center justify-center hover:scale-105 transition-all"
         >
-          <Square className="w-10 h-10 fill-current" />
-        </Button>
+          <Square className="w-8 h-8 fill-current" />
+        </button>
       )}
 
-      {recordingState === 'review' && (
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={onReRecord}
-            className="gap-2 h-16 px-6"
-          >
+      {/* Review - Save or re-record */}
+      {recordingState === "review" && (
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="lg" onClick={onReRecord} className="gap-2 h-14 px-6">
             <RotateCcw className="w-5 h-5" />
             Re-record
           </Button>
           <Button
-            variant="default"
             size="lg"
             onClick={onSave}
             disabled={isSaving}
-            className="gap-2 h-16 px-6 bg-primary hover:bg-primary/90"
+            className="gap-2 h-14 px-8"
           >
             {isSaving ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Saving...
+              </>
             ) : (
-              <Save className="w-5 h-5" />
+              <>
+                <Save className="w-5 h-5" />
+                Save Recording
+              </>
             )}
-            {isSaving ? "Saving..." : "Save"}
           </Button>
         </div>
       )}
 
-      {recordingState === 'saving' && (
-        <div className="flex items-center gap-2">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <Text className="text-lg">Uploading your recording...</Text>
+      {/* Saving state */}
+      {recordingState === "saving" && (
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span className="text-lg">Uploading your recording...</span>
         </div>
       )}
 
-      {recordingState === 'saved' && (
+      {/* Saved state */}
+      {recordingState === "saved" && (
         <div className="text-center space-y-2">
-          <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto" />
-          <Text className="text-lg font-medium text-green-700">
-            Recording saved successfully!
-          </Text>
+          <CheckCircle2 className="w-12 h-12 text-success mx-auto" />
+          <p className="text-lg font-medium text-success">Recording saved!</p>
         </div>
       )}
 
-      {recordingState === 'recording' && (
-        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-1 rounded-full font-mono text-lg">
-          {formatTime(timer)}
-        </div>
+      {/* Helper text */}
+      {recordingState === "camera_ready" && (
+        <p className="text-sm text-muted-foreground mt-4">
+          Click the red button to start recording
+        </p>
       )}
     </div>
   );

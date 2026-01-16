@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { STARAnswer } from "@/lib/zod-schemas";
 import { Button } from "@/components/ui/button";
-import { Heading, Text } from "@/components/ui/typography";
+import { Badge } from "@/components/ui/badge";
 import { ArrowRight, ArrowLeft, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
@@ -15,42 +15,51 @@ interface TeleprompterProps {
 
 const SECTIONS = ["Question", "Situation", "Task", "Action", "Result"] as const;
 
+type SectionType = (typeof SECTIONS)[number];
+
+const sectionStyles: Record<SectionType, { badge: "default" | "situation" | "task" | "action" | "result"; color: string }> = {
+  Question: { badge: "default", color: "text-foreground" },
+  Situation: { badge: "situation", color: "text-[var(--star-situation)]" },
+  Task: { badge: "task", color: "text-[var(--star-task)]" },
+  Action: { badge: "action", color: "text-[var(--star-action)]" },
+  Result: { badge: "result", color: "text-[var(--star-result)]" },
+};
+
 export const Teleprompter = memo(function Teleprompter({ answer, className }: TeleprompterProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Map sections to their content
   const sectionContent = [
     {
-      title: "Question",
+      title: "Question" as const,
       content: answer.question,
-      description: "Prepare to answer:",
+      description: "The interview question:",
     },
     {
-      title: "Situation",
+      title: "Situation" as const,
       content: answer.situation,
-      description:
-        "Set the scene and give the necessary details of your example.",
+      description: "Set the scene with context and details.",
     },
     {
-      title: "Task",
+      title: "Task" as const,
       content: answer.task,
-      description: "Describe what your responsibility was in that situation.",
+      description: "Describe your responsibility.",
     },
     {
-      title: "Action",
+      title: "Action" as const,
       content: answer.action,
-      description: "Explain exactly what steps you took to address it.",
+      description: "Explain the steps you took.",
     },
     {
-      title: "Result",
+      title: "Result" as const,
       content: answer.result,
-      description: "Share what outcomes your actions achieved.",
+      description: "Share the outcomes achieved.",
     },
   ];
 
   const currentSection = sectionContent[currentIndex];
   const progress = ((currentIndex + 1) / SECTIONS.length) * 100;
+  const style = sectionStyles[currentSection.title];
 
   const handleNext = useCallback(() => {
     if (currentIndex < SECTIONS.length - 1) {
@@ -68,32 +77,20 @@ export const Teleprompter = memo(function Teleprompter({ answer, className }: Te
     setCurrentIndex(0);
   }, []);
 
-  // Auto-scroll to top when section changes
   useEffect(() => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({
-        top: 0,
-        // behavior: "smooth",
-        behavior: "instant",
-      });
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: "instant" });
     }
   }, [currentIndex]);
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only trigger if not typing in an input (though there aren't any here)
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       switch (e.code) {
         case "Space":
         case "ArrowRight":
-          e.preventDefault(); // Prevent page scroll on space
+          e.preventDefault();
           handleNext();
           break;
         case "ArrowLeft":
@@ -110,103 +107,95 @@ export const Teleprompter = memo(function Teleprompter({ answer, className }: Te
   return (
     <div
       className={cn(
-        "flex flex-col h-full bg-card border border-border rounded-lg overflow-hidden shadow-sm",
+        "flex flex-col h-full bg-card border border-border rounded-xl overflow-hidden shadow-sm",
         className
       )}
     >
-      {/* Header with Progress */}
-      <div className="px-4 py-3 border-b border-border bg-muted/30 space-y-2 shrink-0">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-border bg-secondary/30 space-y-3 shrink-0">
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Text
-              variant="muted"
-              className="text-[10px] font-small uppercase tracking-wider"
-            >
-              Current Section
-            </Text>
-            <div className="flex items-center gap-2">
-              <Heading as="h3" className="text-base text-primary">
-                {currentSection.title}
-              </Heading>
-              <span className="text-muted-foreground text-xs font-normal">
-                ({currentIndex + 1}/{SECTIONS.length})
-              </span>
-            </div>
+          <div className="flex items-center gap-3">
+            <Badge variant={style.badge} size="lg">
+              {currentSection.title}
+            </Badge>
+            <span className="text-sm text-muted-foreground">
+              {currentIndex + 1} of {SECTIONS.length}
+            </span>
           </div>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             onClick={handleReset}
             title="Reset to beginning"
-            className="h-8 w-8"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-4 h-4" />
           </Button>
         </div>
-        <Progress value={progress} className="h-1" />
+        <Progress value={progress} className="h-1.5" />
       </div>
 
-      {/* Main Content Area - Scrollable if text is very long, but trying to fit it */}
+      {/* Content */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 p-4 flex flex-col overflow-y-auto relative group scrollbar-thin"
+        className="flex-1 p-6 overflow-y-auto relative group"
       >
-        {/* Hint Overlay */}
-        <div className="absolute top-2 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded border border-border pointer-events-none">
-          Press <span className="font-mono font-bold">Space</span> to advance
+        {/* Keyboard hint */}
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-muted-foreground bg-background/90 backdrop-blur-sm px-2 py-1 rounded-md border">
+          Press <kbd className="px-1 py-0.5 bg-muted rounded text-[10px] font-mono">Space</kbd> to advance
         </div>
 
-        <div className="space-y-3 max-w-prose mx-auto w-full">
-          <Text className="text-base text-muted-foreground font-medium">
+        <div key={currentIndex} className="max-w-prose mx-auto space-y-4 animate-fade-in">
+          <p className="text-sm text-muted-foreground font-medium">
             {currentSection.description}
-          </Text>
+          </p>
 
-          <div className="prose dark:prose-invert max-w-none">
-            <div className="space-y-4">
-              {currentSection.content
-                // Safer splitting: Look for punctuation, space, then UPPERCASE letter.
-                // This avoids splitting on "e.g. example" or "Next.js component"
-                .split(/(?<=[.!?])\s+(?=[A-Z])/)
-                .map((sentence, i) => (
-                  <p
-                    key={i}
-                    className="text-sm font-medium leading-relaxed text-foreground/90"
-                  >
-                    {sentence.trim()}
-                  </p>
-                ))}
-            </div>
+          <div className="space-y-4">
+            {currentSection.content
+              .split(/(?<=[.!?])\s+(?=[A-Z])/)
+              .map((sentence, i) => (
+                <p
+                  key={i}
+                  className={cn(
+                    "text-lg leading-relaxed font-medium",
+                    currentSection.title === "Question"
+                      ? "text-foreground italic"
+                      : "text-foreground/90"
+                  )}
+                >
+                  {sentence.trim()}
+                </p>
+              ))}
           </div>
         </div>
       </div>
 
-      {/* Footer Navigation controls */}
-      <div className="px-4 py-3 border-t border-border bg-muted/10 shrink-0 flex justify-between items-center">
+      {/* Footer Navigation */}
+      <div className="px-5 py-4 border-t border-border bg-secondary/20 shrink-0 flex justify-between items-center">
         <Button
           variant="outline"
           size="sm"
           onClick={handlePrev}
           disabled={currentIndex === 0}
-          className="w-28 gap-2"
+          className="gap-2"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          <ArrowLeft className="w-4 h-4" />
           Previous
         </Button>
 
-        <div className="text-[10px] text-muted-foreground hidden sm:block">
-          Use <kbd className="px-1 py-0.5 bg-muted border rounded">←</kbd>{" "}
-          <kbd className="px-1 py-0.5 bg-muted border rounded">Space</kbd>{" "}
-          <kbd className="px-1 py-0.5 bg-muted border rounded">→</kbd> keys
+        <div className="text-xs text-muted-foreground hidden sm:flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">←</kbd>
+          <kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">Space</kbd>
+          <kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">→</kbd>
         </div>
 
         <Button
           size="sm"
           onClick={handleNext}
           disabled={currentIndex === SECTIONS.length - 1}
-          className="w-28 gap-2"
+          className="gap-2"
         >
           Next
-          <ArrowRight className="w-3.5 h-3.5" />
+          <ArrowRight className="w-4 h-4" />
         </Button>
       </div>
     </div>

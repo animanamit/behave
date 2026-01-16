@@ -4,12 +4,12 @@ import { cn } from "@/lib/utils"
 
 /*
   DESIGN SYSTEM - CARD
-  
-  Modifications for Minimal Style:
-  - Shadows: Removed shadows (`shadow-none`) for a flat, print-like look.
-  - Borders: Crisp 1px border (`border`).
-  - Radius: Removed rounded corners (`rounded-none`) via globals or explicit class.
-  - Spacing: Generous padding.
+
+  Soft Minimal + Flat Style:
+  - Rounded corners (12px)
+  - No shadows, minimal borders
+  - Clean white background
+  - Subtle hover transitions
 */
 
 const Card = React.forwardRef<
@@ -19,13 +19,29 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-none border bg-card text-card-foreground shadow-none",
+      "rounded-xl border border-border/40 bg-card text-card-foreground",
       className
     )}
     {...props}
   />
 ))
 Card.displayName = "Card"
+
+// Interactive card variant with hover effect
+const CardInteractive = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-xl border border-border/40 bg-card text-card-foreground transition-colors duration-200 hover:bg-secondary/30 cursor-pointer",
+      className
+    )}
+    {...props}
+  />
+))
+CardInteractive.displayName = "CardInteractive"
 
 const CardHeader = React.forwardRef<
   HTMLDivElement,
@@ -45,7 +61,7 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("font-sans text-lg font-medium leading-snug tracking-normal", className)}
+    className={cn("text-lg font-semibold leading-snug tracking-tight", className)}
     {...props}
   />
 ))
@@ -57,7 +73,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-sm text-muted-foreground font-mono", className)}
+    className={cn("text-sm text-muted-foreground", className)}
     {...props}
   />
 ))
@@ -83,4 +99,4 @@ const CardFooter = React.forwardRef<
 ))
 CardFooter.displayName = "CardFooter"
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+export { Card, CardInteractive, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }

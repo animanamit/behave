@@ -1,32 +1,46 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useState, useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import SignOutButton from "@/components/auth/sign-out-button";
-import { User } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { User, Menu } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navItems = [
-  { title: "Dashboard", href: "/home" },
-  { title: "Upload", href: "/upload" },
+  { title: "Answers", href: "/answers" },
   { title: "Practice", href: "/practice" },
   { title: "Sessions", href: "/review" },
-  { title: "Answers", href: "/answers" },
 ];
 
 /**
  * Site Header with navigation.
  *
- * Uses prefetch on hover for faster perceived navigation.
- * See revisions.md for explanation of preloading on user intent.
+ * Ultra-minimal header:
+ * - No border, clean separation
+ * - Simple navigation with underline active state
+ * - Compact user menu
  */
 export function SiteHeader() {
   const { data: session } = authClient.useSession();
+  const pathname = usePathname();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
-  // Prefetch route when user hovers - page loads before they click
+  // Avoid hydration mismatch by only rendering dropdowns after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Prefetch route when user hovers
   const handlePrefetch = useCallback(
     (href: string) => {
       router.prefetch(href);
@@ -34,12 +48,23 @@ export function SiteHeader() {
     [router]
   );
 
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/" || pathname === "/home";
+    return pathname.startsWith(href);
+  };
+
   return (
-    <header className="border-b border-border px-6 flex justify-between items-center bg-background sticky top-0 z-50 h-16">
+    <header className="px-6 flex justify-between items-center bg-background sticky top-0 z-50 h-14">
       <div className="flex items-center gap-8">
-        <Link href="/" className="font-sans text-lg font-bold tracking-tight">
-          BEHAVE
+        {/* Logo */}
+        <Link
+          href="/"
+          className="font-sans text-base font-semibold tracking-tight text-foreground"
+        >
+          behave
         </Link>
+
+        {/* Desktop Navigation */}
         <nav className="hidden md:flex gap-6">
           {navItems.map((item) => (
             <Link
@@ -47,36 +72,75 @@ export function SiteHeader() {
               href={item.href}
               onMouseEnter={() => handlePrefetch(item.href)}
               onFocus={() => handlePrefetch(item.href)}
-              className="font-sans text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className={cn(
+                "text-sm font-medium transition-colors relative py-1",
+                isActive(item.href)
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
             >
               {item.title}
+              {isActive(item.href) && (
+                <span className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-foreground rounded-full" />
+              )}
             </Link>
           ))}
         </nav>
       </div>
-      <div className="flex items-center gap-4">
-        {!session ? (
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-8 w-8 rounded-full" />
-            <Skeleton className="h-4 w-20" />
-          </div>
+
+      <div className="flex items-center gap-2">
+        {/* Mobile Navigation - only render after mount to avoid hydration mismatch */}
+        {mounted && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon-sm">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {navItems.map((item) => (
+                <DropdownMenuItem key={item.href} asChild>
+                  <Link href={item.href} className="w-full">
+                    {item.title}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
+        {/* User Profile - only render dropdown after mount */}
+        {!mounted || !session ? (
+          <div className="h-7 w-7 rounded-full bg-secondary animate-pulse" />
         ) : (
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                <User className="h-4 w-4 text-muted-foreground" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center rounded-full hover:opacity-80 transition-opacity">
+                <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
+                  {session.user?.image ? (
+                    <img
+                      src={session.user.image}
+                      alt=""
+                      className="h-7 w-7 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-3 py-2">
+                <p className="text-sm font-medium">{session.user?.name}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {session.user?.email}
+                </p>
               </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">
-                  {session.user?.name || "User"}
-                </span>
-                <span className="text-xs text-muted-foreground truncate max-w-[150px]">
-                  {session.user?.email || "user@behave.ai"}
-                </span>
-              </div>
-            </div>
-            <SignOutButton />
-          </div>
+              <DropdownMenuItem asChild>
+                <SignOutButton className="w-full justify-start" />
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </header>

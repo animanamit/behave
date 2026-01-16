@@ -1,14 +1,13 @@
 "use client";
 
-import { Activity, useState, Suspense } from "react";
+import { useState } from "react";
 import { HomeLayout } from "@/components/layouts/home-layout";
 import { PracticeQuestionList } from "@/components/practice/practice-question-list";
-import dynamic from "next/dynamic"; // Import dynamic
+import dynamic from "next/dynamic";
 import { trpc } from "@/lib/trpc-client";
 import { authClient } from "@/lib/auth-client";
 import { STARAnswer } from "@/lib/zod-schemas";
-import { Heading, Text } from "@/components/ui/typography";
-import { Loader2, Sparkles, ArrowLeft } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -22,7 +21,7 @@ const PracticeSession = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 animate-spin" />
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     ),
   }
@@ -33,7 +32,6 @@ export default function PracticePage() {
   const userId = session?.user.id;
 
   const [selectedAnswer, setSelectedAnswer] = useState<STARAnswer | null>(null);
-  // mode controls which Activity is visible
   const [mode, setMode] = useState<"list" | "practice">("list");
 
   const answersQuery = trpc.answers.getUserAnswers.useQuery(
@@ -48,74 +46,58 @@ export default function PracticePage() {
 
   const handleBackToSelection = () => {
     setMode("list");
-    // We keep selectedAnswer set so PracticeSession doesn't unmount immediately if we wanted to keep its state,
-    // but here we might want to reset it if we want a fresh session next time.
-    // However, keeping it allows 'Activity' to work effectively if we switch back to the SAME answer.
-    // For now, let's keep it. To reset, we'd clear it.
-    // To truly use Activity for caching the *List* state (scroll pos), we definitely need Activity around List.
   };
 
+  // Practice mode - full screen experience
+  if (mode === "practice" && selectedAnswer) {
+    return (
+      <PracticeSession
+        answer={selectedAnswer}
+        onBack={handleBackToSelection}
+      />
+    );
+  }
+
+  // List mode
   return (
     <HomeLayout>
-      <div className="h-full">
-        {/* List View Activity */}
-        <Activity mode={mode === "list" ? "visible" : "hidden"}>
-          <div className="flex flex-col h-full space-y-6">
-            <div className="space-y-2 shrink-0">
-              <Heading as="h2" className="text-2xl tracking-tight">
-                Practice Mode
-              </Heading>
-              <Text variant="muted">
-                Select an answer to practice recording yourself.
-              </Text>
+      <div className="page-transition max-w-2xl mx-auto py-2">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight">Practice</h1>
+          <p className="text-muted-foreground mt-1">
+            Select a question to practice your response
+          </p>
+        </div>
+
+        {/* Content */}
+        {answersQuery.isLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 space-y-3">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Loading questions...</p>
+          </div>
+        ) : answersQuery.data && answersQuery.data.length > 0 ? (
+          <PracticeQuestionList
+            answers={answersQuery.data}
+            onSelectAnswer={handleSelectAnswer}
+            onReviewSessions={() => {}}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center py-24 space-y-6">
+            <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-muted-foreground" />
             </div>
-
-            {answersQuery.isLoading ? (
-              <div className="flex flex-col items-center justify-center h-64 space-y-4">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-                <Text variant="muted">Loading answers...</Text>
-              </div>
-            ) : answersQuery.data && answersQuery.data.length > 0 ? (
-              <PracticeQuestionList
-                answers={answersQuery.data}
-                onSelectAnswer={handleSelectAnswer}
-                onReviewSessions={() => {}}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-64 space-y-6 border border-dashed border-border rounded-xl bg-muted/5">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 text-primary" />
-                </div>
-                <div className="text-center space-y-2">
-                  <Heading as="h4">No answers yet</Heading>
-                  <Text variant="muted" className="max-w-md">
-                    Generate some answers first to start practicing.
-                  </Text>
-                </div>
-                <Link href="/answers">
-                  <Button>Go to Generator</Button>
-                </Link>
-              </div>
-            )}
+            <div className="text-center space-y-2">
+              <h3 className="font-medium">No questions yet</h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Generate your STAR answers first to start practicing.
+              </p>
+            </div>
+            <Link href="/answers">
+              <Button>Generate Answers</Button>
+            </Link>
           </div>
-        </Activity>
-
-        {/* Practice View Activity */}
-        <Activity mode={mode === "practice" ? "visible" : "hidden"}>
-          <div className="h-full w-full">
-            {selectedAnswer ? (
-              <PracticeSession
-                answer={selectedAnswer}
-                onBack={handleBackToSelection}
-              />
-            ) : (
-              // Fallback if no answer selected yet (shouldn't happen if logic is correct)
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="w-8 h-8 animate-spin" />
-              </div>
-            )}
-          </div>
-        </Activity>
+        )}
       </div>
     </HomeLayout>
   );

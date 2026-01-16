@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Heading, Text } from "@/components/ui/typography";
+import { Card } from "@/components/ui/card";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { STARAnswer } from "@/lib/zod-schemas";
 import { Teleprompter } from "./teleprompter";
@@ -22,14 +22,13 @@ interface PracticeSessionProps {
 export function PracticeSession({ answer, onBack }: PracticeSessionProps) {
   const { data: session } = authClient.useSession();
   const userId = session?.user.id;
-  
+
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
   const getPresignedUrlMutation = trpc.files.getPresignedUrl.useMutation();
   const savePracticeSessionMutation = trpc.practiceSessions.savePracticeSession.useMutation();
-  const utils = trpc.useUtils();
 
   const {
     recordingState,
@@ -65,15 +64,12 @@ export function PracticeSession({ answer, onBack }: PracticeSessionProps) {
       const fileType = "video/webm";
       const s3Key = `recordings/${userId}/${fileName}`;
 
-      console.log('[PracticeSession] Step 1: Getting presigned URL...', { fileName, fileType });
       const { uploadURL } = await getPresignedUrlMutation.mutateAsync({
         s3Key,
         fileName,
         contentType: fileType,
       });
-      console.log('[PracticeSession] Step 1: Presigned URL received', { s3Key });
 
-      console.log('[PracticeSession] Step 2: Uploading to S3...');
       const uploadResponse = await fetch(uploadURL, {
         method: "PUT",
         body: recordedBlob,
@@ -81,42 +77,37 @@ export function PracticeSession({ answer, onBack }: PracticeSessionProps) {
       });
 
       if (!uploadResponse.ok) {
-        console.error('[PracticeSession] Step 2: Upload failed', uploadResponse.status);
         throw new Error("Failed to upload to S3");
       }
-      console.log('[PracticeSession] Step 2: Upload complete');
 
-      console.log('[PracticeSession] Step 3: Saving session to DB...');
-      const result = await savePracticeSessionMutation.mutateAsync({
+      await savePracticeSessionMutation.mutateAsync({
         answerId: answer.id as string,
         videoS3Key: s3Key,
         duration: timer,
         userId,
       });
-      console.log('[PracticeSession] Step 3: Session saved', result, 'Inngest event "video/uploaded" should trigger now');
 
       setShowSuccessOverlay(true);
-      toast.success("Recording saved successfully! Analysis in progress...");
+      toast.success("Recording saved! Analysis in progress...");
 
       setTimeout(() => {
-        toast.info("Check the Review page for AI feedback once analysis is complete.", {
+        toast.info("Check Sessions for AI feedback once analysis is complete.", {
           duration: 6000,
         });
       }, 2000);
-
     } catch (error) {
-      console.error('[PracticeSession] ERROR:', error);
+      console.error("[PracticeSession] ERROR:", error);
       toast.error("Failed to save recording");
       setIsSaving(false);
     }
   }, [recordedBlob, userId, answer.id, timer, getPresignedUrlMutation, savePracticeSessionMutation]);
 
   const handleToggleCamera = useCallback(() => {
-    setIsCameraOn(prev => !prev);
+    setIsCameraOn((prev) => !prev);
   }, []);
 
   const handleToggleMic = useCallback(() => {
-    setIsMicOn(prev => !prev);
+    setIsMicOn((prev) => !prev);
   }, []);
 
   const handleRecordAnother = useCallback(() => {
@@ -125,35 +116,32 @@ export function PracticeSession({ answer, onBack }: PracticeSessionProps) {
     handleReRecord();
   }, [handleReRecord]);
 
-  const handleBackToReview = useCallback(() => {
-    setShowSuccessOverlay(false);
-    setIsSaving(false);
-  }, []);
-
   return (
-    <div className="space-y-2 h-[calc(100vh-4rem)] flex flex-col p-2">
-      <div className="flex justify-between items-center shrink-0 pb-2">
-        <div className="space-y-1">
-          <Heading as="h2" className="text-xl">
-            Practice Session
-          </Heading>
-          <Text variant="muted" className="text-xs">
-            Record your answer while following script
-          </Text>
+    <div className="h-[calc(100vh-5rem)] flex flex-col p-4 gap-4">
+      {/* Header */}
+      <div className="flex justify-between items-center shrink-0">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Practice Session</h1>
+          <p className="text-sm text-muted-foreground">
+            Record yourself while following the script
+          </p>
         </div>
-        <Button variant="ghost" size="sm" className="gap-2" onClick={onBack}>
+        <Button variant="ghost" size="sm" onClick={onBack} className="gap-2">
           <ArrowLeft className="w-4 h-4" />
-          Back to Selection
+          Back
         </Button>
       </div>
 
+      {/* Error message */}
       {errorMessage && (
-        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg">
-          <Text className="font-medium">{errorMessage}</Text>
+        <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-xl text-sm">
+          {errorMessage}
         </div>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-6 flex-1 min-h-0">
+      {/* Main content */}
+      <div className="grid lg:grid-cols-2 gap-4 flex-1 min-h-0">
+        {/* Left: Video */}
         <div className="flex flex-col gap-4 h-full">
           {isReview ? (
             <PlaybackReview
@@ -176,7 +164,7 @@ export function PracticeSession({ answer, onBack }: PracticeSessionProps) {
           )}
 
           <RecordingControls
-            recordingState={showSuccessOverlay ? 'saved' : recordingState}
+            recordingState={showSuccessOverlay ? "saved" : recordingState}
             timer={timer}
             formatTime={formatTime}
             onStartCamera={handleStartCamera}
@@ -188,50 +176,47 @@ export function PracticeSession({ answer, onBack }: PracticeSessionProps) {
           />
         </div>
 
+        {/* Right: Teleprompter */}
         <div className="h-full overflow-hidden">
           <Teleprompter answer={answer} className="h-full" />
         </div>
       </div>
 
+      {/* Success overlay */}
       {showSuccessOverlay && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+          <Card className="p-8 max-w-md w-full mx-4 animate-scale-in">
             <div className="text-center space-y-6">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-12 h-12 text-green-600" />
+              <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto animate-bounce-in">
+                <CheckCircle2 className="w-12 h-12 text-success" />
               </div>
-              
+
               <div>
-                <Heading as="h3" className="text-2xl mb-2">
-                  Recording Saved!
-                </Heading>
-                <Text variant="muted" className="text-center">
-                  Your practice session is being analyzed. You can view the results 
-                  on your review page once analysis is complete.
-                </Text>
+                <h2 className="text-2xl font-semibold mb-2">Recording Saved!</h2>
+                <p className="text-muted-foreground">
+                  Your practice session is being analyzed. Check the Sessions page for AI feedback
+                  once analysis is complete.
+                </p>
               </div>
 
               <div className="space-y-3">
-                <Button 
-                  onClick={handleRecordAnother}
-                  className="w-full h-12 text-base"
-                >
+                <Button onClick={handleRecordAnother} className="w-full h-12">
                   Record Another Take
                 </Button>
-                
-                <Button 
+
+                <Button
                   variant="outline"
                   onClick={() => {
-                    handleBackToReview();
+                    setShowSuccessOverlay(false);
                     onBack();
                   }}
-                  className="w-full h-12 text-base"
+                  className="w-full h-12"
                 >
                   Back to Selection
                 </Button>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>
