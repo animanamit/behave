@@ -27,13 +27,11 @@ export const practiceSessionsRouter = createTRPCRouter({
           analysisStatus: "pending",
         },
       });
-      console.log('[savePracticeSession] Session created:', session.id, 'videoUrl:', session.videoUrl, 'videoS3Key:', input.videoS3Key);
 
-      const sendResult = await inngest.send({
+      await inngest.send({
         name: "video/transcribe",
         data: { sessionId: session.id },
       });
-      console.log('[savePracticeSession] Inngest send result:', sendResult);
 
       return { sessionId: session.id, videoS3Key: input.videoS3Key };
     }),
@@ -64,16 +62,29 @@ export const practiceSessionsRouter = createTRPCRouter({
     }),
 
   getUserPracticeSessions: protectedProcedure
-    .input(z.object({ userId: z.string() }))
+    .input(
+      z.object({
+        userId: z.string(),
+        page: z.number().int().positive().default(1).optional(),
+        pageSize: z.number().int().positive().max(100).default(20).optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       if (input.userId !== ctx.userId) {
         return [];
       }
 
+      // For backward compatibility, if pagination params not provided, return all (with limit)
+      const page = input.page ?? 1;
+      const pageSize = input.pageSize ?? 20;
+      const skip = (page - 1) * pageSize;
+
       const sessions = await db.practiceSession.findMany({
         where: { userId: input.userId },
         include: { answer: true, sessionFeedback: true },
         orderBy: { recordedAt: "desc" },
+        skip,
+        take: pageSize,
       });
 
       return sessions.map((session) => {
@@ -124,29 +135,79 @@ export const practiceSessionsRouter = createTRPCRouter({
       }
 
       try {
+        // Helper function to safely extract S3 key from URL
+        const extractS3Key = (url: string | null | undefined): string | null => {
+          if (!url) return null;
+          try {
+            // S3 URLs are: https://bucket.s3.amazonaws.com/key or https://s3.region.amazonaws.com/bucket/key
+            // We need to extract the key part
+            const urlObj = new URL(url);
+            const pathname = urlObj.pathname;
+            
+            // Remove leading slash
+            if (pathname.startsWith("/")) {
+              return pathname.substring(1);
+            }
+            return pathname;
+          } catch (err) {
+            // Fall back to string parsing if URL constructor fails
+            const match = url.match(/amazonaws\.com\/(.+)$/);
+            return match ? match[1] : null;
+          }
+        };
+
         const s3Keys = sessions
           .flatMap((session) => [
-            session.videoUrl?.split(".amazonaws.com/")[1],
-            session.audioUrl?.split(".amazonaws.com/")[1],
-            session.thumbnailUrl?.split(".amazonaws.com/")[1],
+            extractS3Key(session.videoUrl),
+            extractS3Key(session.audioUrl),
+            extractS3Key(session.thumbnailUrl),
           ])
           .filter(Boolean) as string[];
 
-        await deleteMultipleFromS3(s3Keys);
+        // Delete from S3 first
+        try {
+          if (s3Keys.length > 0) {
+            await deleteMultipleFromS3(s3Keys);
+          }
+        } catch (s3Error) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Failed to delete video files from storage: ${
+              s3Error instanceof Error ? s3Error.message : "Unknown S3 error"
+            }`,
+          });
+        }
 
-        await withRetry(
-          () => db.practiceSession.deleteMany({
-            where: { id: { in: input.sessionIds } },
-          }),
-          3,
-          1000
-        );
+        // Then delete database records
+        try {
+          await withRetry(
+            () => db.practiceSession.deleteMany({
+              where: { id: { in: input.sessionIds } },
+            }),
+            3,
+            1000
+          );
+        } catch (dbError) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Failed to delete session records from database: ${
+              dbError instanceof Error ? dbError.message : "Unknown database error"
+            }`,
+          });
+        }
 
         return { success: true, deletedCount: sessions.length };
       } catch (error) {
+        // If it's already a TRPCError, re-throw it
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        // Otherwise wrap it
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to delete sessions",
+          message: `Failed to delete sessions: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
         });
       }
     }),

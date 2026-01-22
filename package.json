@@ -12,7 +12,15 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
-    "inngest": "inngestctl dev --project-dir src/lib/inngest"
+    "inngest": "inngestctl dev --project-dir src/lib/inngest",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:watch": "vitest --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:all": "npm run lint && npm run test && npm run test:e2e"
   },
   "dependencies": {
     "@ai-sdk/react": "^2.0.98",
@@ -88,18 +96,28 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.1.9",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.5.2",
     "@types/node": "^22",
     "@types/pg": "^8.15.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "@vitest/ui": "^2.1.8",
     "baseline-browser-mapping": "^2.8.32",
     "dotenv": "^17.2.3",
+    "jsdom": "^24.1.0",
     "postcss": "^8.5",
     "prisma": "^7.1.0",
     "tailwindcss": "^4.1.9",
     "tsx": "^4.20.6",
     "tw-animate-css": "1.3.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.8"
   }
 }

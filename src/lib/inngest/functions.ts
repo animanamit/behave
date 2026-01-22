@@ -5,6 +5,7 @@ import { GenerateAnswersSchema } from "@/lib/zod-schemas";
 import { db } from "@/db/prisma";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "@/lib/s3-client";
+import { AI_GENERATION } from "@/lib/constants";
 
 /**
  * INNGEST FUNCTION: Generate Interview Answers
@@ -64,7 +65,6 @@ export const generateAnswers = inngest.createFunction(
 
     if (!finalResumeText && s3Key) {
       await step.run("fetch-resume-from-s3", async () => {
-        console.log(`[Inngest] Fetching resume from S3: ${s3Key}`);
         try {
           const command = new GetObjectCommand({
             Bucket: process.env.AWS_S3_BUCKET!,
@@ -74,7 +74,6 @@ export const generateAnswers = inngest.createFunction(
           // @ts-ignore - Body is a stream in Node.js
           finalResumeText = await streamToString(response.Body);
         } catch (err) {
-          console.error("Failed to fetch from S3", err);
           throw new Error("Failed to read resume file");
         }
       });
@@ -84,9 +83,6 @@ export const generateAnswers = inngest.createFunction(
     // STEP 1: Server-Side Cleanup (Idempotency Guarantee)
     // -------------------------------------------------------------------------
     await step.run("purge-existing-answers", async () => {
-      console.log(
-        `[Inngest] Clearing previously generated answers for ${userId}`
-      );
       await db.starAnswer.deleteMany({
         where: {
           userId: userId,
@@ -97,8 +93,8 @@ export const generateAnswers = inngest.createFunction(
     // -------------------------------------------------------------------------
     // STEP 2: Configuration
     // -------------------------------------------------------------------------
-    const BATCH_SIZE = 5; // Generate 5 answers at a time
-    const TARGET_TOTAL = 25; // Total answers we want
+    const BATCH_SIZE = AI_GENERATION.BATCH_SIZE;
+    const TARGET_TOTAL = AI_GENERATION.TARGET_TOTAL_ANSWERS;
     const allAnswers: any[] = []; // Accumulator for all batches
 
     // -------------------------------------------------------------------------
@@ -118,10 +114,6 @@ export const generateAnswers = inngest.createFunction(
       const batchResult = await step.run(
         `generate-batch-${batchNumber}`, // Unique step ID for tracking
         async () => {
-          console.log(
-            `[Inngest] Generating batch ${batchNumber}: answers #${startId} to #${endId}`
-          );
-
           // Build the prompt with dynamic instructions
           // We tell the AI exactly which IDs to generate (e.g., "Generate IDs 6-10")
           const promptText =
@@ -183,12 +175,9 @@ export const generateAnswers = inngest.createFunction(
             model: "google/gemini-2.0-flash",
             schema: GenerateAnswersSchema, // Forces structured JSON output
             prompt: promptText,
-            temperature: 0.7, // Balance between creativity and consistency
+            temperature: AI_GENERATION.PROMPT_TEMPERATURE, // Balance between creativity and consistency
           });
 
-          console.log(
-            `[Inngest] Generated batch ${batchNumber}: ${object.answers.length} answers`
-          );
           return object; // Returns { answers: [...] } with 5 answers
         }
       );
@@ -236,10 +225,6 @@ export const generateAnswers = inngest.createFunction(
           await db.starAnswer.create({
             data: answerToInsert,
           });
-
-          console.log(
-            `[Inngest] ✓ Saved answer ${answerNumber}/25 (${answer.competency})`
-          );
         });
 
         // NO ARTIFICIAL DELAYS - Frontend polls frequently (500ms) to catch each save

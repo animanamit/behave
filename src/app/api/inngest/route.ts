@@ -1,11 +1,23 @@
+/**
+ * Inngest Handler - All background job functions defined here
+ * 
+ * This is the single source of truth for:
+ * - transcribeVideo: Transcribe video recordings with Whisper
+ * - analyzeRecording: Analyze transcripts with Gemini
+ * 
+ * These functions are triggered by events and run asynchronously
+ * without time limits, handling long-running tasks like transcription.
+ */
+
 import { serve } from "inngest/next";
 import { inngest } from "@/lib/inngest/inngest";
 import { db } from "@/db/prisma";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { s3Client } from "@/lib/s3-client";
+import { s3Client, deleteMultipleFromS3 } from "@/lib/s3-client";
 import OpenAI from "openai";
+import { TIMEOUTS, OPENAI_ERRORS, VIDEO } from "@/lib/constants";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -26,21 +38,28 @@ export const transcribeVideo = inngest.createFunction(
   {
     id: "transcribe-video",
     name: "Transcribe Video",
-    timeouts: { finish: "15m" }, // 15 min for 8-min video transcription
+    timeouts: { finish: TIMEOUTS.INNGEST_TRANSCRIPTION_FINISH },
     retries: 2,
   },
   { event: "video/transcribe" },
   async ({ event, step }) => {
     const { sessionId } = event.data;
-    console.log('[transcribeVideo] Received event:', { sessionId });
 
     try {
+      // Atomically update status to "transcribing" only if current status is "pending"
+      // This prevents race conditions if multiple events are triggered
       await step.run("update-status-transcribing", async () => {
-        console.log('[transcribeVideo] Updating status to: transcribing');
-        await db.practiceSession.update({
-          where: { id: sessionId },
+        const updated = await db.practiceSession.updateMany({
+          where: { 
+            id: sessionId,
+            analysisStatus: "pending", // Only update if still pending
+          },
           data: { analysisStatus: "transcribing" },
         });
+        
+        if (updated.count === 0) {
+          throw new Error("Session not in pending state or not found");
+        }
       });
 
       const videoUrl = await step.run("get-video-url", async () => {
@@ -48,38 +67,31 @@ export const transcribeVideo = inngest.createFunction(
           where: { id: sessionId },
         });
         if (!session) {
-          console.error('[transcribeVideo] Session not found:', sessionId);
           throw new Error("Session not found");
         }
-        console.log('[transcribeVideo] Session found, videoUrl:', session.videoUrl);
         return session.videoUrl;
       });
 
       await step.run("transcribe-audio", async () => {
         try {
-          const s3Key = extractS3Key(videoUrl);
-          console.log('[transcribeVideo] S3 key extracted:', s3Key);
-          const command = new GetObjectCommand({
-            Bucket: process.env.AWS_S3_BUCKET!,
-            Key: s3Key,
-          });
-          const response = await s3Client.send(command);
-          console.log('[transcribeVideo] S3 response received');
-          if (!response.Body) {
-            throw new Error("No body in S3 response");
-          }
-          const buffer = await streamToBuffer(response.Body);
-          console.log('[transcribeVideo] Video downloaded, size:', buffer.length);
+           const s3Key = extractS3Key(videoUrl);
+           const command = new GetObjectCommand({
+             Bucket: process.env.AWS_S3_BUCKET!,
+             Key: s3Key,
+           });
+           const response = await s3Client.send(command);
+           if (!response.Body) {
+             throw new Error("No body in S3 response");
+           }
+           const buffer = await streamToBuffer(response.Body);
 
           const file = new File([buffer as any], "recording.webm", {
             type: "video/webm",
           });
 
-          console.log('[transcribeVideo] Starting transcription...');
-
-          // Add timeout for Whisper API (12 min max for long videos)
-          const controller = new AbortController();
-          const transcriptionTimeout = setTimeout(() => controller.abort(), 12 * 60 * 1000);
+          // Add timeout for Whisper API
+           const controller = new AbortController();
+           const transcriptionTimeout = setTimeout(() => controller.abort(), TIMEOUTS.TRANSCRIPTION_API_MS);
 
           let transcription;
           try {
@@ -96,9 +108,12 @@ export const transcribeVideo = inngest.createFunction(
             clearTimeout(transcriptionTimeout);
           }
 
-          console.log('[transcribeVideo] Transcription complete');
           const transcriptText = transcription.text || "";
-          const duration = Math.ceil((buffer as any).length / 1024 / 100);
+          
+          // Estimate duration from transcript word count (avg 150 words per minute = 2.5 words/second)
+          // More reliable than file size which varies by compression
+          const wordCount = transcriptText.split(/\s+/).filter(w => w.length > 0).length;
+          const duration = Math.max(Math.ceil(wordCount / 2.5), 30); // Minimum 30 seconds
 
           await db.practiceSession.update({
             where: { id: sessionId },
@@ -109,25 +124,19 @@ export const transcribeVideo = inngest.createFunction(
             },
           });
         } catch (error: any) {
-          if (error?.status === 429 || error?.message?.includes('quota')) {
-            console.log('[transcribeVideo] OpenAI quota exceeded, using mock transcript');
-            const mockTranscript = "This is a mock transcript. Please check your OpenAI API quota and billing to enable actual transcription. I recorded this practice session to test the system, but the transcription service is currently unavailable due to API limits.";
-            await db.practiceSession.update({
-              where: { id: sessionId },
-              data: {
-                transcript: mockTranscript,
-                duration: 120,
-                analysisStatus: "analyzing",
-              },
-            });
-          } else {
-            throw error;
-          }
+          // Don't fake transcripts - mark as failed so user can retry
+          // Faking data silently causes inaccurate feedback
+          await db.practiceSession.update({
+            where: { id: sessionId },
+            data: {
+              analysisStatus: "failed",
+            },
+          });
+          throw error;
         }
       });
 
       await step.run("trigger-analysis", async () => {
-        console.log('[transcribeVideo] Triggering analysis event...');
         await inngest.send({
           name: "video/transcribed",
           data: { sessionId },
@@ -135,10 +144,9 @@ export const transcribeVideo = inngest.createFunction(
       });
 
       return { success: true };
-    } catch (error) {
-      console.error('[transcribeVideo] ERROR:', error);
+      } catch (error) {
       throw error;
-    }
+      }
   }
 );
 
@@ -146,13 +154,11 @@ export const analyzeRecording = inngest.createFunction(
   {
     id: "analyze-recording",
     name: "Analyze Recording",
-    timeouts: { finish: "5m" }, // 5 min for AI analysis
+    timeouts: { finish: TIMEOUTS.INNGEST_ANALYSIS_FINISH },
     retries: 2,
   },
   { event: "video/transcribed" },
   async ({ event, step }) => {
-    console.log('[analyzeRecording] Received event');
-
     try {
       const sessionId = event.data.sessionId;
 
@@ -162,10 +168,8 @@ export const analyzeRecording = inngest.createFunction(
           include: { answer: true },
         });
         if (!session || !session.transcript) {
-          console.error('[analyzeRecording] Session or transcript not found');
           throw new Error("Session or transcript not found");
         }
-        console.log('[analyzeRecording] Session and transcript found');
         const scriptWords = session.answer.fullAnswer.split(/\s+/).length;
         const transcriptWords = (session.transcript || "").split(/\s+/).length;
         return { scriptWords, transcriptWords, duration: session.duration };
@@ -260,16 +264,116 @@ Keep feedback concise and actionable.`,
       });
 
       await step.run("mark-completed", async () => {
-        console.log('[analyzeRecording] Marking session as completed');
-        await db.practiceSession.update({
-          where: { id: sessionId },
+        // Atomically update status to "completed" only if still "analyzing"
+        const updated = await db.practiceSession.updateMany({
+          where: {
+            id: sessionId,
+            analysisStatus: "analyzing", // Only update if still analyzing
+          },
           data: { analysisStatus: "completed" },
         });
+
+        if (updated.count === 0) {
+          throw new Error("Session not in analyzing state or not found");
+        }
       });
 
       return { success: true };
+      } catch (error) {
+      // Mark session as failed instead of leaving it stuck "analyzing"
+      // User can retry the analysis
+      try {
+       await db.practiceSession.updateMany({
+         where: {
+           id: event.data.sessionId,
+           analysisStatus: { in: ["analyzing", "transcribed"] }, // Update if in either state
+         },
+         data: { analysisStatus: "failed" },
+       });
+      } catch (updateError) {
+       // Log but don't throw - we already have the original error
+      }
+      throw error;
+      }
+      }
+      );
+
+/**
+ * Cleanup Job: Remove old failed sessions and their S3 files
+ * 
+ * Triggered daily to clean up:
+ * - Sessions marked as "failed" older than 30 days
+ * - Associated video/audio/thumbnail files from S3
+ * - Database records
+ * 
+ * Helps prevent accumulation of orphaned failed sessions.
+ */
+export const cleanupFailedSessions = inngest.createFunction(
+  {
+    id: "cleanup-failed-sessions",
+    name: "Cleanup Failed Sessions",
+  },
+  { cron: "0 2 * * *" }, // Run once per day at 2 AM UTC
+  async ({ step }) => {
+    try {
+      // Find sessions marked as failed older than 30 days
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+      const failedSessions = await step.run("find-old-failed-sessions", async () => {
+        return await db.practiceSession.findMany({
+          where: {
+            analysisStatus: "failed",
+            recordedAt: { lt: thirtyDaysAgo },
+          },
+        });
+      });
+
+      if (failedSessions.length === 0) {
+        return { success: true, deletedCount: 0 };
+      }
+
+      // Extract S3 keys from failed sessions
+      const extractS3Key = (url: string | null | undefined): string | null => {
+        if (!url) return null;
+        try {
+          const urlObj = new URL(url);
+          const pathname = urlObj.pathname;
+          return pathname.startsWith("/") ? pathname.substring(1) : pathname;
+        } catch (err) {
+          const match = url.match(/amazonaws\.com\/(.+)$/);
+          return match ? match[1] : null;
+        }
+      };
+
+      const s3Keys = failedSessions
+        .flatMap((session: any) => [
+          extractS3Key(session.videoUrl),
+          extractS3Key(session.audioUrl),
+          extractS3Key(session.thumbnailUrl),
+        ])
+        .filter(Boolean) as string[];
+
+      // Delete S3 files
+      if (s3Keys.length > 0) {
+        await step.run("delete-s3-files", async () => {
+          await deleteMultipleFromS3(s3Keys);
+        });
+      }
+
+      // Delete database records
+      const sessionIds = failedSessions.map((s: any) => s.id);
+      await step.run("delete-database-records", async () => {
+        await db.practiceSession.deleteMany({
+          where: { id: { in: sessionIds } },
+        });
+      });
+
+      return {
+        success: true,
+        deletedCount: failedSessions.length,
+        filesDeleted: s3Keys.length,
+      };
     } catch (error) {
-      console.error('[analyzeRecording] ERROR:', error);
       throw error;
     }
   }
@@ -277,5 +381,5 @@ Keep feedback concise and actionable.`,
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [transcribeVideo, analyzeRecording],
+  functions: [transcribeVideo, analyzeRecording, cleanupFailedSessions],
 });

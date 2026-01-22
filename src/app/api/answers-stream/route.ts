@@ -1,8 +1,9 @@
 // src/app/api/answers-stream/route.ts
 import { getCurrentSession } from "@/lib/cached-auth";
 import { db } from "@/db/prisma";
+import { TIMEOUTS } from "@/lib/constants";
 
-const POLL_INTERVAL_MS = 500; // Poll DB every 500ms to catch answers as they're saved
+const POLL_INTERVAL_MS = TIMEOUTS.INNGEST_POLL_INTERVAL_MS;
 
 type SSEPayload = {
   answers: {

@@ -144,6 +144,8 @@ model SessionFeedback {
   // Relations
   session PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
+  // Ensure only one feedback per session (idempotency)
+  @@unique([sessionId])
   @@map("sessionFeedback")
 }
 

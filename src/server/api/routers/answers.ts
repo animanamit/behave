@@ -5,6 +5,7 @@ import { STARAnswer, STARAnswerSchema, CreateSingleQuestionSchema } from "@/lib/
 import { generateObject } from "ai";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "@/lib/s3-client";
+import { VALIDATION } from "@/lib/constants";
 
 // Helper to read S3 stream to string
 const streamToString = (stream: any) =>
@@ -68,8 +69,18 @@ export const answersRouter = createTRPCRouter({
         // @ts-ignore - Body is a stream in Node.js
         documentText = await streamToString(response.Body);
       } catch (err) {
-        console.error("Failed to fetch document from S3:", err);
         throw new Error("Failed to read document file");
+      }
+
+      // 2.5. Validate document size
+      if (documentText.length === 0) {
+        throw new Error("Document is empty");
+      }
+
+      // Truncate very long documents to avoid token limits
+      const maxDocLength = 15000; // ~3000 tokens at ~5 chars per token
+      if (documentText.length > maxDocLength) {
+        documentText = documentText.substring(0, maxDocLength) + "\n... (document truncated due to length)";
       }
 
       // 3. Call AI to generate STAR answer
