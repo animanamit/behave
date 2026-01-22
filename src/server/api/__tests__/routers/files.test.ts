@@ -1,3 +1,24 @@
+/**
+ * Files Router Tests
+ * 
+ * Tests file upload, deletion, and management functionality.
+ * 
+ * WHEN TO UPDATE THIS FILE:
+ * - You modify file upload logic
+ * - You change file deletion
+ * - You modify file listing/pagination
+ * - You change S3 integration
+ * - You modify permission checks for files
+ * 
+ * QUICK REFERENCE:
+ * - getUserFiles: Tests retrieving user's file list
+ * - saveFile: Tests saving file metadata to database
+ * - deleteFile: Tests deleting single file + S3 cleanup
+ * - deleteFiles: Tests bulk delete
+ * 
+ * See TEST_MAINTENANCE_GUIDE.md for detailed guidance.
+ */
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { filesRouter } from "@/server/api/routers/files";
 import { TRPCError } from "@trpc/server";

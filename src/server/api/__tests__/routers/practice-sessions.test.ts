@@ -1,3 +1,29 @@
+/**
+ * Practice Sessions Router Tests
+ * 
+ * Tests video recording, transcription, and feedback functionality.
+ * 
+ * WHEN TO UPDATE THIS FILE:
+ * - You modify session creation or storage
+ * - You change transcription triggering (Inngest)
+ * - You modify session deletion or S3 cleanup
+ * - You change pagination for session lists
+ * - You update feedback storage/retrieval
+ * 
+ * QUICK REFERENCE:
+ * - savePracticeSession: Creates session, triggers transcription via Inngest
+ * - getPracticeSession: Retrieves session with feedback data
+ * - getUserPracticeSessions: Lists sessions with pagination
+ * - deletePracticeSessions: Deletes sessions + S3 cleanup
+ * 
+ * IMPORTANT MOCKS:
+ * - Prisma: db.practiceSession
+ * - Inngest: inngest.send() (triggers background jobs)
+ * - AWS: deleteMultipleFromS3()
+ * 
+ * See TEST_MAINTENANCE_GUIDE.md for detailed guidance.
+ */
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { practiceSessionsRouter } from "@/server/api/routers/practice-sessions";
 import { TRPCError } from "@trpc/server";

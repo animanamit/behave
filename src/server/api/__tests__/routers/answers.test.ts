@@ -1,3 +1,31 @@
+/**
+ * Answers Router Tests
+ * 
+ * Tests AI-powered interview answer generation from resumes.
+ * 
+ * WHEN TO UPDATE THIS FILE:
+ * - You change the AI generation prompt
+ * - You modify the answer schema
+ * - You change document processing (truncation, parsing)
+ * - You update S3 document fetching
+ * - You modify permission checks
+ * 
+ * QUICK REFERENCE:
+ * - getUserAnswers: Tests retrieving saved answers for user
+ * - createAnswer: Tests AI generation from resume
+ *   - Handles S3 document loading
+ *   - Truncates documents > 15000 chars
+ *   - Validates file ownership
+ *   - Tests error cases
+ * 
+ * IMPORTANT MOCKS:
+ * - Prisma: db.starAnswer, db.file
+ * - AWS: s3Client.send()
+ * - AI: generateObject() from 'ai'
+ * 
+ * See TEST_MAINTENANCE_GUIDE.md for detailed guidance.
+ */
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { answersRouter } from "@/server/api/routers/answers";
 
